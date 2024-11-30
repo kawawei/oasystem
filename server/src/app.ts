@@ -7,9 +7,19 @@ import { initializeDatabase } from './config/database';
 import { errorHandler, notFoundHandler } from './middleware/error';
 import { ApiResponse } from './types';
 import routes from './routes';
+import authRoutes from './routes/auth.routes';
 
 // 載入環境變量
 config();
+
+// 添加這些日誌
+console.log('Environment variables:', {
+  NODE_ENV: process.env.NODE_ENV,
+  DB_HOST: process.env.DB_HOST,
+  DB_USER: process.env.DB_USER,
+  DB_PASSWORD: process.env.DB_PASSWORD,
+  DB_NAME: process.env.DB_NAME
+});
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -24,8 +34,20 @@ initializeDatabase()
   });
 
 // 中間件
-app.use(cors());
-app.use(helmet());
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  credentials: false
+}));
+
+// 配置 helmet
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginOpenerPolicy: { policy: "unsafe-none" },
+  contentSecurityPolicy: false
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

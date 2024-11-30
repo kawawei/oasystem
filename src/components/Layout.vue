@@ -9,7 +9,6 @@
         :default-active="route.path"
         class="el-menu-vertical"
         :collapse="isCollapse"
-        router
         background-color="#304156"
         text-color="#bfcbd9"
         active-text-color="#409EFF"
@@ -19,84 +18,42 @@
           <el-icon><Monitor /></el-icon>
           <template #title>儀表板</template>
         </el-menu-item>
-        <el-menu-item index="/users">
-          <el-icon><User /></el-icon>
-          <template #title>用戶管理</template>
-        </el-menu-item>
-        <el-menu-item index="/attendance">
-          <el-icon><Calendar /></el-icon>
-          <template #title>出缺勤管理</template>
-        </el-menu-item>
-        <el-menu-item index="/finance">
-          <el-icon><Money /></el-icon>
-          <template #title>財務管理</template>
-        </el-menu-item>
-        <el-menu-item index="/schedule">
-          <el-icon><Timer /></el-icon>
-          <template #title>行程安排</template>
-        </el-menu-item>
+        
         <el-menu-item index="/task">
           <el-icon><List /></el-icon>
           <template #title>任務管理</template>
         </el-menu-item>
-        <el-sub-menu index="/crm">
-          <template #title>
-            <el-icon><Sell /></el-icon>
-            <span>CRM管理</span>
-          </template>
-          <el-menu-item index="/crm/stranger">陌生客戶</el-menu-item>
-          <el-menu-item index="/crm/potential">潛在客戶</el-menu-item>
-          <el-menu-item index="/crm/cooperated">已合作客戶</el-menu-item>
-        </el-sub-menu>
-        <el-menu-item index="/settings">
-          <el-icon><Setting /></el-icon>
-          <template #title>系統設置</template>
-        </el-menu-item>
+
+        <!-- 其他菜單項 -->
       </el-menu>
     </el-aside>
 
     <el-container>
       <el-header class="main-header">
-        <div class="header-left">
-          <el-icon class="collapse-btn" @click="isCollapse = !isCollapse">
-            <Fold v-if="!isCollapse" />
-            <Expand v-else />
-          </el-icon>
-        </div>
-        <div class="header-right">
-          <el-dropdown @command="handleCommand">
-            <span class="user-info">
-              {{ userStore.userInfo?.name || '未登入' }}
-              <el-icon><ArrowDown /></el-icon>
-            </span>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="profile">個人資料</el-dropdown-item>
-                <el-dropdown-item command="logout" divided>登出</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </div>
+        <el-icon 
+          class="collapse-btn"
+          @click="isCollapse = !isCollapse"
+        >
+          <component :is="isCollapse ? Expand : Fold" />
+        </el-icon>
+
+        <el-dropdown @command="handleCommand">
+          <div class="user-info">
+            <el-icon><User /></el-icon>
+            <span>{{ userStore.userInfo?.name }}</span>
+            <el-icon><ArrowDown /></el-icon>
+          </div>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="profile">個人資料</el-dropdown-item>
+              <el-dropdown-item command="logout">登出</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </el-header>
 
       <el-main class="main-content">
-        <router-view v-slot="{ Component }">
-          <keep-alive>
-            <suspense>
-              <template #default>
-                <component 
-                  :is="Component" 
-                  :key="$route.fullPath"
-                />
-              </template>
-              <template #fallback>
-                <div class="loading-container">
-                  <el-loading :show="true" />
-                </div>
-              </template>
-            </suspense>
-          </keep-alive>
-        </router-view>
+        <router-view />
       </el-main>
     </el-container>
   </el-container>
@@ -110,16 +67,11 @@ import { ElMessageBox } from 'element-plus'
 import {
   Monitor,
   User,
-  Calendar,
-  Money,
-  Timer,
   List,
   ArrowDown,
   Fold,
   Expand,
-  Platform,
-  Setting,
-  Sell
+  Platform
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -146,7 +98,6 @@ const handleCommand = async (command: string) => {
 }
 
 const handleSelect = (index: string) => {
-  console.log('Selected menu:', index)
   router.push(index)
 }
 </script>
@@ -186,19 +137,18 @@ const handleSelect = (index: string) => {
 }
 
 .main-header {
-  background-color: #304156;
-  border-bottom: 1px solid #1f2d3d;
+  background-color: #fff;
+  border-bottom: 1px solid #e6e6e6;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 20px;
-  color: #bfcbd9;
 }
 
 .collapse-btn {
   font-size: 20px;
   cursor: pointer;
-  color: #bfcbd9;
+  color: #303133;
 }
 
 .user-info {
@@ -206,7 +156,6 @@ const handleSelect = (index: string) => {
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  color: #bfcbd9;
 }
 
 .main-content {
@@ -216,65 +165,15 @@ const handleSelect = (index: string) => {
 
 :deep(.el-menu) {
   border-right: none;
-  background-color: #304156 !important;
 }
 
 :deep(.el-menu-item) {
-  background-color: #304156 !important;
-  
-  &:hover {
-    background-color: #263445 !important;
-  }
-  
   &.is-active {
     background-color: #263445 !important;
   }
-}
-
-:deep(.el-sub-menu__title) {
-  background-color: #304156 !important;
   
   &:hover {
     background-color: #263445 !important;
   }
-}
-
-:deep(.el-sub-menu) {
-  background-color: #304156 !important;
-  
-  .el-menu {
-    background-color: #1f2d3d !important;
-  }
-  
-  .el-menu-item {
-    background-color: #1f2d3d !important;
-    
-    &:hover {
-      background-color: #001528 !important;
-    }
-    
-    &.is-active {
-      background-color: #001528 !important;
-    }
-  }
-}
-
-/* 過渡動畫 */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-.loading-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  width: 100%;
 }
 </style> 

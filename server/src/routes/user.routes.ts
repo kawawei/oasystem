@@ -1,24 +1,20 @@
 import { Router } from 'express';
+import { User } from '../entities/User.entity';
 import { authMiddleware } from '../middleware/auth';
 
 const router = Router();
 
-// 用戶認證相關路由
-router.post('/login', (req, res) => {
-  // TODO: 實現登入邏輯
-});
-
-router.post('/register', (req, res) => {
-  // TODO: 實現註冊邏輯
-});
-
-// 需要認證的路由
-router.get('/profile', authMiddleware, (req, res) => {
-  // TODO: 實現獲取用戶資料邏輯
-});
-
-router.put('/profile', authMiddleware, (req, res) => {
-  // TODO: 實現更新用戶資料邏輯
+// 獲取用戶列表
+router.get('/', authMiddleware, async (_req, res) => {
+  try {
+    const users = await User.find({
+      select: ['id', 'username', 'email', 'role', 'status']
+    });
+    res.json({ success: true, data: users });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ success: false, error: '獲取用戶列表失敗' });
+  }
 });
 
 export default router; 

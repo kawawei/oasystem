@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, BaseEntity } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, BaseEntity, BeforeInsert } from 'typeorm';
 import { UserRole, UserStatus } from '../types';
+import bcrypt from 'bcryptjs';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -29,7 +30,10 @@ export class User extends BaseEntity {
   })
   status!: UserStatus;
 
-  @Column({ nullable: true })
+  @Column({ 
+    type: 'datetime', 
+    nullable: true 
+  })
   lastLogin!: Date | null;
 
   @CreateDateColumn()
@@ -41,5 +45,18 @@ export class User extends BaseEntity {
   constructor(partial: Partial<User> = {}) {
     super();
     Object.assign(this, partial);
+  }
+
+  @BeforeInsert()
+  async hashPassword() {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
+
+  async comparePassword(candidatePassword: string): Promise<boolean> {
+    console.log('Comparing passwords:', {
+      candidate: candidatePassword,
+      hashed: this.password
+    });
+    return bcrypt.compare(candidatePassword, this.password);
   }
 } 

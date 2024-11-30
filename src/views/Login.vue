@@ -83,20 +83,37 @@ const handleLogin = async () => {
   
   try {
     loading.value = true
-    // 驗證表單
     await loginFormRef.value.validate()
     
-    // 模擬登入驗證
-    if (loginForm.username === 'admin' && loginForm.password === '123456') {
-      // 使用 Pinia 存儲登入狀態
-      userStore.setLoginState('dummy-token', { name: 'admin' })
+    const requestData = {
+      username: loginForm.username,
+      password: loginForm.password
+    }
+    console.log('Sending login request:', requestData)
+    
+    const response = await fetch('http://localhost:5000/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      mode: 'cors',
+      credentials: 'omit',
+      body: JSON.stringify(requestData)
+    })
+
+    const data = await response.json()
+    console.log('Login response:', data)
+
+    if (data.success) {
+      userStore.setLoginState(data.token, data.user)
       router.push('/')
     } else {
-      // 顯示錯誤訊息
-      ElMessage.error('用戶名或密碼錯誤')
+      ElMessage.error(data.error || '登入失敗')
     }
   } catch (error) {
-    console.error('表單驗證失敗', error)
+    console.error('Login error:', error)
+    ElMessage.error('登入失敗')
   } finally {
     loading.value = false
   }

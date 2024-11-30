@@ -9,7 +9,17 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
-  optimizeDeps: {
-    include: ['file-saver', 'xlsx']
+  build: {
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url))
+      }
+    }
+  },
+  server: {
+    port: 5174,
+    fs: {
+      strict: false
+    }
   }
 })

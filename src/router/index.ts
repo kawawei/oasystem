@@ -1,9 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Layout from '../components/Layout.vue'
+import Login from '../views/Login.vue'
+import Home from '../views/Home.vue'
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    {
+      path: '/login',
+      name: 'login',
+      component: Login,
+      meta: { requiresAuth: false }
+    },
     {
       path: '/',
       component: Layout,
@@ -11,7 +19,13 @@ const router = createRouter({
         {
           path: '',
           name: 'dashboard',
-          component: () => import('../views/Home.vue'),
+          component: Home,
+          meta: { requiresAuth: true }
+        },
+        {
+          path: '/task',
+          name: 'task',
+          component: () => import('../views/task/Index.vue'),
           meta: { requiresAuth: true }
         },
         {
@@ -69,21 +83,15 @@ const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
-          path: '/task',
-          name: 'task',
-          component: () => import('@/views/task/Index.vue'),
-          meta: { requiresAuth: true }
-        },
-        {
           path: '/task/:id',
           name: 'taskDetail',
-          component: () => import('@/views/task/Detail.vue'),
+          component: () => import('../views/task/Detail.vue'),
           meta: { requiresAuth: true }
         },
         {
           path: '/task/report',
           name: 'taskReport',
-          component: () => import('@/views/task/Report.vue'),
+          component: () => import('../views/task/Report.vue'),
           meta: { requiresAuth: true }
         }
       ]
@@ -93,8 +101,13 @@ const router = createRouter({
 
 // 路由守衛
 router.beforeEach((to, _from, next) => {
-  if (to.path !== '/login' && !localStorage.getItem('token')) {
+  const isLoginPage = to.path === '/login'
+  const hasToken = localStorage.getItem('token')
+
+  if (!hasToken && !isLoginPage) {
     next('/login')
+  } else if (hasToken && isLoginPage) {
+    next('/')
   } else {
     next()
   }

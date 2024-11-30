@@ -1,10 +1,7 @@
 <template>
   <el-config-provider :locale="zhTw">
     <router-view />
-    <div style="display: none">
-      登入狀態: {{ isLoggedIn }}
-    </div>
-    <ChatWindow />
+    <ChatWindow v-if="isLoggedIn && !isLoginPage" />
   </el-config-provider>
 </template>
 
@@ -21,18 +18,15 @@ html, body {
 </style>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useUserStore } from './stores/user'
-import zhTw from 'element-plus/dist/locale/zh-tw.mjs'
+import { useRoute } from 'vue-router'
+import zhTw from 'element-plus/es/locale/lang/zh-tw'
 import ChatWindow from '@/components/chat/ChatWindow.vue'
 
 const userStore = useUserStore()
-const isLoggedIn = computed(() => userStore.isLoggedIn)
+const route = useRoute()
 
-// 添加調試代碼
-onMounted(() => {
-  console.log('App mounted')
-  console.log('isLoggedIn:', isLoggedIn.value)
-  console.log('userStore:', userStore)
-})
+const isLoggedIn = computed(() => userStore.isLoggedIn)
+const isLoginPage = computed(() => route.path === '/login')
 </script>

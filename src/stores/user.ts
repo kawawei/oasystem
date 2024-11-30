@@ -1,6 +1,6 @@
 // 引入必要的函數
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 // 定義用戶狀態存儲
 export const useUserStore = defineStore('user', () => {
@@ -8,6 +8,9 @@ export const useUserStore = defineStore('user', () => {
   const userInfo = ref<{name: string} | null>(null)
   // token
   const token = ref<string | null>(null)
+
+  // 添加 isLoggedIn 計算屬性
+  const isLoggedIn = computed(() => !!token.value)
 
   // 初始化狀態
   const initState = () => {
@@ -40,6 +43,7 @@ export const useUserStore = defineStore('user', () => {
   return {
     userInfo,
     token,
+    isLoggedIn,
     initState,
     setLoginState,
     logout

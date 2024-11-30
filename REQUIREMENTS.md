@@ -8,16 +8,21 @@
 5. 所有響應使用中文
 
 ## Git 提交規範
-提交信息格式：`type: description`
-
-類型（type）：
-- feat: 新功能
-- fix: 修復錯誤
-- docs: 文檔更新
-- style: 代碼格式調整
-- refactor: 代碼重構
-- test: 添加測試
-- chore: 構建過程或輔助工具的變動
+1. 提交位置
+   - 單一目錄更新：在該目錄下執行 git 命令
+   - 多目錄更新：需要回到專案根目錄執行 git 命令
+   ```bash
+   # 回到專案根目錄
+   cd ..
+   
+   # 檢查當前位置
+   pwd
+   
+   # 提交所有更改
+   git add .
+   git commit -m "type: description"
+   git push origin main
+   ```
 
 ## 開發流程規範
 1. 停止服務器
@@ -158,3 +163,9 @@
    - 執行安裝命令
    - 確認 package.json 更新
    - 啟動服務器測試
+
+## 日期記錄規範
+1. 使用格式：YYYY/MM/DD
+2. 按時間倒序排列
+3. 每天的開發內容單獨一個區塊
+4. 清楚標記開發節點

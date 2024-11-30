@@ -465,6 +465,13 @@ export const useTaskStore = defineStore('task', {
       console.log('導出報表數據', statistics)
       
       return statistics
+    },
+
+    updateTaskStatus: async (taskId: number, status: TaskStatus) => {
+      const task = useTaskStore().tasks.find((t: Task) => t.id === taskId)
+      if (task) {
+        task.status = status
+      }
     }
   }
 }) 

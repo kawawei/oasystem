@@ -146,8 +146,25 @@
 import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Delete } from '@element-plus/icons-vue'
-import { taskPriorityOptions } from '@/types/task'
-import type { TaskTemplate } from '@/types/task'
+import { taskPriorityOptions, TaskPriority } from '@/types/task'
+import type { TaskTemplate, TemplateCategory } from '@/types/task'
+
+interface TaskTemplateStage {
+  name: string
+  description: string
+  order: number
+  dependencies: number[]
+}
+
+// 默認模板數據
+const defaultTaskTemplates: TaskTemplate[] = [{
+  id: 1,
+  name: '基本任務模板',
+  description: '簡單的任務流程模板',
+  priority: TaskPriority.MEDIUM,
+  category: 'general',
+  stages: [] as TaskTemplateStage[]
+}]
 
 // 模板列表
 const templates = ref([...defaultTaskTemplates])
@@ -162,8 +179,9 @@ const form = reactive({
   id: 0,
   name: '',
   description: '',
-  priority: 'medium',
-  stages: [] as any[]
+  priority: TaskPriority.MEDIUM,
+  category: 'general' as TemplateCategory,
+  stages: [] as TaskTemplateStage[]
 })
 
 // 表單驗證規則
@@ -187,7 +205,7 @@ const getPriorityType = (priority: string) => {
   return map[priority] || ''
 }
 
-// 獲取優先級文字
+// 獲取優先級字
 const getPriorityText = (priority: string) => {
   const option = taskPriorityOptions.find(opt => opt.value === priority)
   return option ? option.label : '未知'
@@ -200,7 +218,8 @@ const handleAddTemplate = () => {
     id: 0,
     name: '',
     description: '',
-    priority: 'medium',
+    priority: TaskPriority.MEDIUM,
+    category: 'general',
     stages: []
   })
   dialogVisible.value = true

@@ -160,7 +160,12 @@ export const taskStageTemplates = {
 }
 
 // 模板分類
-export type TemplateCategory = 'general' | 'video' | 'design' | 'development' | 'marketing' | 'other'
+export enum TemplateCategory {
+  DEFAULT = 'default',
+  VIDEO = 'video',
+  DESIGN = 'design',
+  DEVELOPMENT = 'development'
+}
 
 // 更新任務模板接口
 export interface TaskTemplate {
@@ -194,7 +199,7 @@ export const defaultTaskTemplates: TaskTemplate[] = [
     name: '影片製作',
     description: '標準影片製作流程',
     priority: TaskPriority.MEDIUM,
-    category: 'video',
+    category: TemplateCategory.VIDEO,
     stages: [
       {
         name: 'A Cut',
@@ -223,7 +228,7 @@ export const defaultTaskTemplates: TaskTemplate[] = [
     name: '設計專案',
     description: '標準設計流程',
     priority: TaskPriority.MEDIUM,
-    category: 'design',
+    category: TemplateCategory.DESIGN,
     stages: [
       {
         name: '設計草圖',
@@ -252,7 +257,7 @@ export const defaultTaskTemplates: TaskTemplate[] = [
     name: '網站開發',
     description: '標準網站開發流程',
     priority: TaskPriority.HIGH,
-    category: 'development',
+    category: TemplateCategory.DEVELOPMENT,
     stages: [
       {
         name: '需求分析',

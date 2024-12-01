@@ -23,10 +23,30 @@ const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
-          path: '/task',
+          path: 'task',
           name: 'task',
-          component: () => import('../views/task/Index.vue'),
-          meta: { requiresAuth: true }
+          component: () => import('../views/task/Layout.vue'),
+          meta: { requiresAuth: true },
+          children: [
+            {
+              path: '',
+              name: 'taskList',
+              component: () => import('../views/task/Index.vue'),
+              meta: { requiresAuth: true }
+            },
+            {
+              path: ':id',
+              name: 'taskDetail',
+              component: () => import('../views/task/Detail.vue'),
+              meta: { requiresAuth: true }
+            },
+            {
+              path: 'report',
+              name: 'taskReport',
+              component: () => import('../views/task/Report.vue'),
+              meta: { requiresAuth: true }
+            }
+          ]
         },
         {
           path: 'users',
@@ -80,18 +100,6 @@ const router = createRouter({
           path: 'schedule',
           name: 'schedule',
           component: () => import('../views/schedule/Index.vue'),
-          meta: { requiresAuth: true }
-        },
-        {
-          path: '/task/:id',
-          name: 'taskDetail',
-          component: () => import('../views/task/Detail.vue'),
-          meta: { requiresAuth: true }
-        },
-        {
-          path: '/task/report',
-          name: 'taskReport',
-          component: () => import('../views/task/Report.vue'),
           meta: { requiresAuth: true }
         }
       ]

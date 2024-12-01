@@ -1,5 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, BaseEntity } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, BaseEntity } from 'typeorm';
 import { User } from './User.entity';
+import { TaskStatus, TaskPriority } from '../types/task';
+import { TaskStage } from './TaskStage.entity';
+import { TaskComment } from './TaskComment.entity';
 
 @Entity('tasks')
 export class Task extends BaseEntity {
@@ -14,26 +17,39 @@ export class Task extends BaseEntity {
 
   @Column({
     type: 'enum',
-    enum: ['pending', 'in_progress', 'completed', 'cancelled'],
-    default: 'pending'
+    enum: TaskStatus,
+    default: TaskStatus.PENDING
   })
-  status!: string;
+  status!: TaskStatus;
 
   @Column({
     type: 'enum',
-    enum: ['low', 'medium', 'high'],
-    default: 'medium'
+    enum: TaskPriority,
+    default: TaskPriority.MEDIUM
   })
-  priority!: string;
+  priority!: TaskPriority;
 
-  @ManyToOne(() => User)
-  assignee!: User;
+  @Column({ type: 'int', default: 0 })
+  progress!: number;
+
+  @Column({ type: 'datetime', nullable: true })
+  startDate!: Date | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  endDate!: Date | null;
 
   @ManyToOne(() => User)
   creator!: User;
 
-  @Column({ type: 'datetime' })
-  dueDate!: Date;
+  @OneToMany(() => TaskStage, stage => stage.task, {
+    cascade: true
+  })
+  stages!: TaskStage[];
+
+  @OneToMany(() => TaskComment, comment => comment.task, {
+    cascade: true
+  })
+  comments!: TaskComment[];
 
   @CreateDateColumn()
   createdAt!: Date;

@@ -81,8 +81,8 @@
       <el-form :model="newChatForm">
         <el-form-item label="聊天類型">
           <el-radio-group v-model="newChatForm.type">
-            <el-radio label="private">私聊</el-radio>
-            <el-radio label="group">群聊</el-radio>
+            <el-radio value="private">私聊</el-radio>
+            <el-radio value="group">群聊</el-radio>
           </el-radio-group>
         </el-form-item>
 
@@ -178,7 +178,7 @@ const closeChat = (roomId: number) => {
 }
 
 // 最小化聊天
-const minimizeChat = (roomId: number) => {
+const minimizeChat = (_roomId: number) => {
   // TODO: 實現最小化邏輯
 }
 

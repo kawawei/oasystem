@@ -7,8 +7,8 @@
     <!-- 任務創建方式選擇 -->
     <div v-if="type === 'add'" class="creation-method">
       <el-radio-group v-model="creationMethod">
-        <el-radio label="template">使用模板</el-radio>
-        <el-radio label="custom">自訂任務</el-radio>
+        <el-radio value="template">使用模板</el-radio>
+        <el-radio value="custom">自訂任務</el-radio>
       </el-radio-group>
     </div>
 
@@ -27,20 +27,25 @@
       >
         <!-- 基本信息 -->
         <el-form-item label="任務標題" prop="title">
-          <el-input v-model="form.title" placeholder="請輸入任務標題" />
+          <el-input id="task-title" v-model="form.title" placeholder="請輸入任務標題" />
         </el-form-item>
 
         <el-form-item label="任務描述" prop="description">
           <el-input 
+            id="task-description"
             v-model="form.description" 
             type="textarea" 
-            rows="3"
+            :rows="3"
             placeholder="請輸入任務描述" 
           />
         </el-form-item>
 
         <el-form-item label="優先級" prop="priority">
-          <el-select v-model="form.priority" placeholder="請選擇">
+          <el-select 
+            id="task-priority"
+            v-model="form.priority" 
+            placeholder="請選擇"
+          >
             <el-option
               v-for="option in taskPriorityOptions"
               :key="option.value"
@@ -79,7 +84,11 @@
                     :prop="`stages.${index}.name`"
                     label="階段名稱"
                   >
-                    <el-input v-model="stage.name" placeholder="請輸入階段名稱" />
+                    <el-input 
+                      :id="`stage-${index}-name`"
+                      v-model="stage.name" 
+                      placeholder="請輸入階段名稱" 
+                    />
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
@@ -88,6 +97,7 @@
                     label="負責人"
                   >
                     <el-select 
+                      :id="`stage-${index}-assignee`"
                       v-model="stage.assignee" 
                       multiple 
                       placeholder="請選擇負責人"
@@ -110,6 +120,7 @@
                     label="開始日期"
                   >
                     <el-date-picker
+                      :id="`stage-${index}-start-date`"
                       v-model="stage.startDate"
                       type="date"
                       placeholder="選擇開始日期"
@@ -122,6 +133,7 @@
                     label="結束日期"
                   >
                     <el-date-picker
+                      :id="`stage-${index}-end-date`"
                       v-model="stage.endDate"
                       type="date"
                       placeholder="選擇結束日期"
@@ -135,6 +147,7 @@
                 label="依賴階段"
               >
                 <el-select 
+                  :id="`stage-${index}-dependencies`"
                   v-model="stage.dependencies"
                   multiple
                   placeholder="請選擇依賴的階段"
@@ -144,7 +157,7 @@
                     v-for="(s, i) in form.stages.slice(0, index)"
                     :key="i"
                     :label="`階段${i + 1}: ${s.name}`"
-                    :value="s.id"
+                    :value="i + 1"
                   />
                 </el-select>
               </el-form-item>
@@ -154,9 +167,10 @@
                 label="階段說明"
               >
                 <el-input
+                  :id="`stage-${index}-description`"
                   v-model="stage.description"
                   type="textarea"
-                  rows="2"
+                  :rows="2"
                   placeholder="請輸入階段說明"
                 />
               </el-form-item>
@@ -267,7 +281,7 @@ const handleAddStage = () => {
 // 移除階段
 const handleRemoveStage = (index: number) => {
   form.stages.splice(index, 1)
-  // 更新剩餘階段的順序
+  // 更新剩餘階段的序
   form.stages.forEach((stage, i) => {
     stage.order = i + 1
   })

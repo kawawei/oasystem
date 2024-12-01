@@ -182,6 +182,7 @@ import type { FormInstance } from 'element-plus'
 import { taskPriorityOptions } from '@/types/task'
 import type { TaskForm, TaskTemplate } from '@/types/task'
 import TaskTemplateList from './TaskTemplateList.vue'
+import { TaskPriority } from '@/types/task'
 
 const props = defineProps<{
   visible: boolean
@@ -217,7 +218,7 @@ const userList = ref([
 const form = reactive<TaskForm>({
   title: '',
   description: '',
-  priority: 'medium',
+  priority: TaskPriority.MEDIUM,
   stages: []
 })
 

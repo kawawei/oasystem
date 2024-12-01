@@ -2,7 +2,12 @@
 export type TaskStatus = 'pending' | 'processing' | 'reviewing' | 'completed' | 'cancelled'
 
 // 任務優先級
-export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent'
+export enum TaskPriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  URGENT = 'urgent'
+}
 
 // 任務類型
 export interface Task {
@@ -155,7 +160,12 @@ export const taskStageTemplates = {
 }
 
 // 模板分類
-export type TemplateCategory = 'video' | 'design' | 'development' | 'marketing' | 'other'
+export enum TemplateCategory {
+  DEFAULT = 'default',
+  VIDEO = 'video',
+  DESIGN = 'design',
+  DEVELOPMENT = 'development'
+}
 
 // 更新任務模板接口
 export interface TaskTemplate {
@@ -188,8 +198,8 @@ export const defaultTaskTemplates: TaskTemplate[] = [
     id: 1,
     name: '影片製作',
     description: '標準影片製作流程',
-    priority: 'medium',
-    category: 'video',
+    priority: TaskPriority.MEDIUM,
+    category: TemplateCategory.VIDEO,
     stages: [
       {
         name: 'A Cut',
@@ -205,7 +215,7 @@ export const defaultTaskTemplates: TaskTemplate[] = [
         estimatedHours: 4
       },
       {
-        name: '字幕製作',
+        name: '字幕製',
         description: '添加字幕與最終修改',
         order: 3,
         dependencies: [2],
@@ -217,8 +227,8 @@ export const defaultTaskTemplates: TaskTemplate[] = [
     id: 2,
     name: '設計專案',
     description: '標準設計流程',
-    priority: 'medium',
-    category: 'design',
+    priority: TaskPriority.MEDIUM,
+    category: TemplateCategory.DESIGN,
     stages: [
       {
         name: '設計草圖',
@@ -246,8 +256,8 @@ export const defaultTaskTemplates: TaskTemplate[] = [
     id: 3,
     name: '網站開發',
     description: '標準網站開發流程',
-    priority: 'high',
-    category: 'development',
+    priority: TaskPriority.HIGH,
+    category: TemplateCategory.DEVELOPMENT,
     stages: [
       {
         name: '需求分析',

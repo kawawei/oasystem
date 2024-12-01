@@ -164,16 +164,17 @@
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { CaretTop, CaretBottom } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
-import type { EChartsOption } from 'echarts'
+import type { ECharts, EChartsCoreOption as EChartsOption } from 'echarts/core'
 import { useTaskStore } from '@/stores/task'
+import { ElMessage } from 'element-plus'
 
 const taskStore = useTaskStore()
 
 // 圖表引用
-const statusChartRef = ref<HTMLElement>()
-const trendChartRef = ref<HTMLElement>()
-let statusChart: echarts.ECharts | null = null
-let trendChart: echarts.ECharts | null = null
+const statusChartRef = ref<HTMLElement | null>(null)
+const trendChartRef = ref<HTMLElement | null>(null)
+let statusChart: ECharts | null = null
+let trendChart: ECharts | null = null
 
 // 篩選表單
 const filterForm = reactive({
@@ -225,75 +226,89 @@ const statistics = reactive({
 })
 
 // 表格數據
-const tableData = ref([])
+interface TableDataItem {
+  date: string
+  newTasks: number
+  completedTasks: number
+  completionRate: number
+  averageDuration: number
+  overdueTasks: number
+  overdueRate: number
+}
+
+const tableData = ref<TableDataItem[]>([])
 
 // 初始化圖表
 const initCharts = () => {
   if (statusChartRef.value) {
     statusChart = echarts.init(statusChartRef.value)
-    const statusOption: EChartsOption = {
-      tooltip: {
-        trigger: 'item'
-      },
-      legend: {
-        orient: 'vertical',
-        left: 'left'
-      },
-      series: [
-        {
-          name: '任務狀態',
-          type: 'pie',
-          radius: '50%',
-          data: [
-            { value: 35, name: '進行中' },
-            { value: 30, name: '已完成' },
-            { value: 20, name: '待處理' },
-            { value: 10, name: '審核中' },
-            { value: 5, name: '已取消' }
-          ],
-          emphasis: {
-            itemStyle: {
-              shadowBlur: 10,
-              shadowOffsetX: 0,
-              shadowColor: 'rgba(0, 0, 0, 0.5)'
+    if (statusChart) {
+      const statusOption: EChartsOption = {
+        tooltip: {
+          trigger: 'item'
+        },
+        legend: {
+          orient: 'vertical',
+          left: 'left'
+        },
+        series: [
+          {
+            name: '任務狀態',
+            type: 'pie',
+            radius: '50%',
+            data: [
+              { value: 35, name: '進行中' },
+              { value: 30, name: '已完成' },
+              { value: 20, name: '待處理' },
+              { value: 10, name: '審核中' },
+              { value: 5, name: '已取消' }
+            ],
+            emphasis: {
+              itemStyle: {
+                shadowBlur: 10,
+                shadowOffsetX: 0,
+                shadowColor: 'rgba(0, 0, 0, 0.5)'
+              }
             }
           }
-        }
-      ]
+        ]
+      }
+      statusChart.setOption(statusOption)
     }
-    statusChart.setOption(statusOption)
   }
 
   if (trendChartRef.value) {
     trendChart = echarts.init(trendChartRef.value)
-    const trendOption: EChartsOption = {
-      tooltip: {
-        trigger: 'axis'
-      },
-      legend: {
-        data: ['新增任務', '完成任務']
-      },
-      xAxis: {
-        type: 'category',
-        data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-      },
-      yAxis: {
-        type: 'value'
-      },
-      series: [
-        {
-          name: '新增任務',
-          type: 'line',
-          data: [10, 15, 8, 12, 9, 5, 7]
+    if (trendChart) {
+      const trendOption: EChartsOption = {
+        tooltip: {
+          trigger: 'axis'
         },
-        {
-          name: '完成任務',
-          type: 'line',
-          data: [8, 12, 7, 9, 6, 4, 6]
-        }
-      ]
+        legend: {
+          data: ['新增任務', '完成任務']
+        },
+        xAxis: {
+          type: 'category',
+          data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        },
+        yAxis: {
+          type: 'value'
+        },
+        series: [
+          {
+            name: '新增任務',
+            type: 'line',
+            data: [10, 15, 8, 12, 9, 5, 7]
+          },
+          {
+            name: '完成任務',
+            type: 'line',
+            data: [8, 12, 7, 9, 6, 4, 6]
+          }
+        ]
+      }
+      trendChart.setOption(trendOption)
     }
-    trendChart.setOption(trendOption)
   }
 }
 
@@ -349,7 +364,7 @@ const updateCharts = (stats: any) => {
         }))
       }]
     }
-    statusChart.setOption(statusOption)
+    statusChart!.setOption(statusOption)
   }
 
   // 更新趨勢圖
@@ -373,16 +388,21 @@ const updateCharts = (stats: any) => {
         }
       ]
     }
-    trendChart.setOption(trendOption)
+    trendChart!.setOption(trendOption)
   }
 }
 
 // 更新表格數據
 const updateTable = (trend: any[]) => {
   tableData.value = trend.map(item => ({
-    ...item,
+    date: item.date,
+    newTasks: item.newTasks,
+    completedTasks: item.completedTasks,
     completionRate: item.newTasks ? 
-      Math.round((item.completedTasks / item.newTasks) * 100) : 0
+      Math.round((item.completedTasks / item.newTasks) * 100) : 0,
+    averageDuration: item.averageDuration,
+    overdueTasks: item.overdueTasks,
+    overdueRate: item.overdueRate
   }))
 }
 

@@ -1,8 +1,10 @@
 import { createConnection } from 'typeorm';
 import { User } from '../entities/User.entity';
 import { Task } from '../entities/Task.entity';
-import { CalendarEvent } from '../entities/Calendar.entity';
-import { ChatMessage } from '../entities/Chat.entity';
+import { TaskStage } from '../entities/TaskStage.entity';
+import { TaskComment } from '../entities/TaskComment.entity';
+import { TaskTemplate } from '../entities/TaskTemplate.entity';
+import { TaskTemplateStage } from '../entities/TaskTemplateStage.entity';
 
 export const initializeDatabase = async () => {
   try {
@@ -16,17 +18,21 @@ export const initializeDatabase = async () => {
 
     const connection = await createConnection({
       type: 'mysql',
-      host: 'localhost',
-      port: 3306,
-      username: 'root',
-      password: 'ben01270127',
-      database: 'oasystem',
-      entities: [User, Task, CalendarEvent, ChatMessage],
-      synchronize: process.env.NODE_ENV === 'development',
+      host: process.env.DB_HOST || 'localhost',
+      port: Number(process.env.DB_PORT) || 3306,
+      username: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME || 'oasystem',
+      entities: [
+        User,
+        Task,
+        TaskStage,
+        TaskComment,
+        TaskTemplate,
+        TaskTemplateStage
+      ],
+      synchronize: true,
       logging: true,
-      extra: {
-        connectionLimit: 10
-      },
       dateStrings: true,
       timezone: '+08:00'
     });

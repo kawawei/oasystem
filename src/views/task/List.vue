@@ -34,38 +34,33 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="260">
           <template #default="scope">
-            <el-button-group>
-              <el-button 
-                size="small" 
-                @click="handleViewClick(scope.row)"
-              >
-                查看
-              </el-button>
-              <el-button 
-                size="small" 
-                type="primary"
-                @click="handleEditTask(scope.row)"
-              >
-                編輯
-              </el-button>
-              <el-dropdown>
-                <el-button size="small">
-                  更多<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                </el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item @click="handleSaveAsTemplate(scope.row)">
-                      保存為模板
-                    </el-dropdown-item>
-                    <el-dropdown-item @click="handleDeleteTask(scope.row)">
-                      刪除
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-            </el-button-group>
+            <el-button 
+              size="small"
+              type="info"
+              plain
+              @click="router.push(`/task/${scope.row.id}`)"
+            >
+              <el-icon><View /></el-icon>
+              查看
+            </el-button>
+            <el-button 
+              size="small" 
+              type="primary"
+              @click="handleEditTask(scope.row)"
+            >
+              <el-icon><Edit /></el-icon>
+              編輯
+            </el-button>
+            <el-button 
+              size="small"
+              type="danger"
+              @click="handleDeleteTask(scope.row)"
+            >
+              <el-icon><Delete /></el-icon>
+              刪除
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -111,14 +106,17 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, TrendCharts, Files } from '@element-plus/icons-vue'
+import { Plus, TrendCharts, Files, View, Edit, Delete } from '@element-plus/icons-vue'
 import { useTaskStore } from '@/stores/task'
 import { taskStatusOptions, templateCategoryOptions } from '@/types/task'
 import type { Task, TaskTemplate } from '@/types/task'
 import TaskDialog from './components/TaskDialog.vue'
 
 const taskStore = useTaskStore()
+
+const router = useRouter()
 
 // 對話框控制
 const dialogVisible = ref(false)
@@ -200,31 +198,6 @@ const handleUseTemplate = async (template: TaskTemplate) => {
   }
 }
 
-// 保存為模板
-const handleSaveAsTemplate = async (task: Task) => {
-  try {
-    const templateName = await ElMessageBox.prompt('請輸入模板名稱', '保存為模板', {
-      confirmButtonText: '確定',
-      cancelButtonText: '取消',
-      inputValue: task.title
-    })
-    
-    await taskStore.saveAsTemplate(task, templateName.value)
-    ElMessage.success('保存成功')
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('保存失敗')
-    }
-  }
-}
-
-// 查看任務
-const handleViewClick = (task: Task) => {
-  currentTask.value = task
-  // 可以導航到詳情頁面
-  // router.push(`/task/${task.id}`)
-}
-
 // 編輯任務
 const handleEditTask = (task: Task) => {
   dialogType.value = 'edit'
@@ -253,9 +226,16 @@ const handleDeleteTask = async (task: Task) => {
   }
 }
 
-// 初始化
-onMounted(() => {
-  taskStore.init()
+// 加載數據
+onMounted(async () => {
+  try {
+    await taskStore.fetchTasks()
+    if (!taskStore.tasks.length) {
+      ElMessage.warning('暫無任務數據')
+    }
+  } catch (error) {
+    ElMessage.error('加載任務列表失敗')
+  }
 })
 </script>
 

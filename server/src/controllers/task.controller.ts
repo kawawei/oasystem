@@ -285,17 +285,15 @@ const taskController = {
       }
 
       stage.progress = progress
+      await stage.save()
+
+      // 更新任務整體進度
+      const allStages = await TaskStage.find({ where: { task: { id: taskId } } })
+      const totalProgress = allStages.reduce((sum, s) => sum + s.progress, 0)
+      const averageProgress = Math.round(totalProgress / allStages.length)
       
-      // 根據進度自動更新狀態
-      if (progress === 100 && stage.status !== TaskStatus.COMPLETED) {
-        await stage.updateStatus(TaskStatus.COMPLETED)
-      } else if (progress > 0 && progress < 100 && stage.status === TaskStatus.PENDING) {
-        await stage.updateStatus(TaskStatus.IN_PROGRESS)
-      } else if (progress === 0 && stage.status !== TaskStatus.PENDING) {
-        await stage.updateStatus(TaskStatus.PENDING)
-      } else {
-        await stage.save()
-      }
+      stage.task.progress = averageProgress
+      await stage.task.save()
 
       res.json({
         success: true,

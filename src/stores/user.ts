@@ -1,51 +1,53 @@
-// 引入必要的函數
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
 
 // 定義用戶狀態存儲
-export const useUserStore = defineStore('user', () => {
-  // 用戶信息
-  const userInfo = ref<{name: string} | null>(null)
-  // token
-  const token = ref<string | null>(null)
+export const useUserStore = defineStore('user', {
+  state: () => ({
+    userInfo: null as { id: number; name: string } | null,
+    token: null as string | null,
+    users: [] as { id: number; name: string }[]
+  }),
 
-  // 添加 isLoggedIn 計算屬性
-  const isLoggedIn = computed(() => !!token.value)
+  getters: {
+    isLoggedIn: (state) => !!state.token,
+    isAdmin: (state) => state.userInfo?.id === 1 // 假設 ID 為 1 的用戶是管理員
+  },
 
-  // 初始化狀態
-  const initState = () => {
-    // 從 localStorage 獲取數據
-    const savedToken = localStorage.getItem('token')
-    const savedUser = localStorage.getItem('user')
-    
-    if (savedToken) token.value = savedToken
-    if (savedUser) userInfo.value = JSON.parse(savedUser)
-  }
+  actions: {
+    initState() {
+      // 從 localStorage 獲取數據
+      const savedToken = localStorage.getItem('token')
+      const savedUser = localStorage.getItem('user')
+      
+      if (savedToken) this.token = savedToken
+      if (savedUser) this.userInfo = JSON.parse(savedUser)
 
-  // 設置登入狀態
-  const setLoginState = (tokenValue: string, user: {name: string}) => {
-    token.value = tokenValue
-    userInfo.value = user
-    // 保存到 localStorage
-    localStorage.setItem('token', tokenValue)
-    localStorage.setItem('user', JSON.stringify(user))
-  }
+      // 初始化測試用戶數據
+      this.users = [
+        { id: 1, name: '張三' },
+        { id: 2, name: '李四' },
+        { id: 3, name: '王五' }
+      ]
+    },
 
-  // 登出
-  const logout = () => {
-    token.value = null
-    userInfo.value = null
-    // 清除 localStorage
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-  }
+    setLoginState(tokenValue: string, user: { id: number; name: string }) {
+      this.token = tokenValue
+      this.userInfo = user
+      // 保存到 localStorage
+      localStorage.setItem('token', tokenValue)
+      localStorage.setItem('user', JSON.stringify(user))
+    },
 
-  return {
-    userInfo,
-    token,
-    isLoggedIn,
-    initState,
-    setLoginState,
-    logout
+    logout() {
+      this.token = null
+      this.userInfo = null
+      // 清除 localStorage
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+    },
+
+    getUserById(id: number) {
+      return this.users.find(user => user.id === id)
+    }
   }
 }) 

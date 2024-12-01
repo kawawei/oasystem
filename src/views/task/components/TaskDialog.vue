@@ -64,118 +64,132 @@
             </el-button>
           </div>
 
-          <el-form-item
-            v-for="(stage, index) in form.stages"
-            :key="index"
-            :prop="`stages.${index}.name`"
-            :rules="{ required: true, message: '請輸入階段名稱', trigger: 'blur' }"
-          >
-            <div class="stage-item">
-              <div class="stage-header">
-                <span class="stage-order">階段 {{ index + 1 }}</span>
-                <el-button type="danger" link @click="handleRemoveStage(index)">
+          <el-steps :active="form.stages.length" finish-status="success" align-center class="custom-steps">
+            <el-step 
+              v-for="(stage, index) in form.stages"
+              :key="index"
+              :title="stage.name || `階段 ${index + 1}`"
+              :description="stage.description"
+            >
+              <template #icon>
+                <el-button 
+                  type="danger" 
+                  circle 
+                  size="small"
+                  @click="handleRemoveStage(index)"
+                >
                   <el-icon><Delete /></el-icon>
                 </el-button>
-              </div>
+              </template>
+            </el-step>
+          </el-steps>
 
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <el-form-item 
-                    :prop="`stages.${index}.name`"
-                    label="階段名稱"
-                  >
-                    <el-input 
-                      :id="`stage-${index}-name`"
-                      v-model="stage.name" 
-                      placeholder="請輸入階段名稱" 
-                    />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item 
-                    :prop="`stages.${index}.assignee`"
-                    label="負責人"
-                  >
-                    <el-select 
-                      :id="`stage-${index}-assignee`"
-                      v-model="stage.assignee" 
-                      multiple 
-                      placeholder="請選擇負責人"
-                    >
-                      <el-option
-                        v-for="user in userList"
-                        :key="user.id"
-                        :label="user.name"
-                        :value="user.id"
-                      />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-              </el-row>
-
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <el-form-item 
-                    :prop="`stages.${index}.startDate`"
-                    label="開始日期"
-                  >
-                    <el-date-picker
-                      :id="`stage-${index}-start-date`"
-                      v-model="stage.startDate"
-                      type="date"
-                      placeholder="選擇開始日期"
-                    />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item 
-                    :prop="`stages.${index}.endDate`"
-                    label="結束日期"
-                  >
-                    <el-date-picker
-                      :id="`stage-${index}-end-date`"
-                      v-model="stage.endDate"
-                      type="date"
-                      placeholder="選擇結束日期"
-                    />
-                  </el-form-item>
-                </el-col>
-              </el-row>
-
-              <el-form-item 
-                :prop="`stages.${index}.dependencies`"
-                label="依賴階段"
-              >
-                <el-select 
-                  :id="`stage-${index}-dependencies`"
-                  v-model="stage.dependencies"
-                  multiple
-                  placeholder="請選擇依賴的階段"
-                  :disabled="index === 0"
-                >
-                  <el-option
-                    v-for="(s, i) in form.stages.slice(0, index)"
-                    :key="i"
-                    :label="`階段${i + 1}: ${s.name}`"
-                    :value="i + 1"
-                  />
-                </el-select>
-              </el-form-item>
-
-              <el-form-item 
-                :prop="`stages.${index}.description`"
-                label="階段說明"
-              >
-                <el-input
-                  :id="`stage-${index}-description`"
-                  v-model="stage.description"
-                  type="textarea"
-                  :rows="2"
-                  placeholder="請輸入階段說明"
-                />
-              </el-form-item>
+          <div 
+            v-for="(stage, index) in form.stages"
+            :key="index"
+            class="stage-item"
+          >
+            <div class="stage-header">
+              <span class="stage-order">階段 {{ index + 1 }}</span>
             </div>
-          </el-form-item>
+
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item 
+                  :prop="`stages.${index}.name`"
+                  label="階段名稱"
+                >
+                  <el-input 
+                    :id="`stage-${index}-name`"
+                    v-model="stage.name" 
+                    placeholder="請輸入階段名稱" 
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item 
+                  :prop="`stages.${index}.assignee`"
+                  label="負責人"
+                >
+                  <el-select 
+                    :id="`stage-${index}-assignee`"
+                    v-model="stage.assignee" 
+                    multiple 
+                    placeholder="請選擇負責人"
+                  >
+                    <el-option
+                      v-for="user in userList"
+                      :key="user.id"
+                      :label="user.name"
+                      :value="user.id"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item 
+                  :prop="`stages.${index}.startDate`"
+                  label="開始日期"
+                >
+                  <el-date-picker
+                    :id="`stage-${index}-start-date`"
+                    v-model="stage.startDate"
+                    type="date"
+                    placeholder="選擇開始日期"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item 
+                  :prop="`stages.${index}.endDate`"
+                  label="結束日期"
+                >
+                  <el-date-picker
+                    :id="`stage-${index}-end-date`"
+                    v-model="stage.endDate"
+                    type="date"
+                    placeholder="選擇結束日期"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-form-item 
+              :prop="`stages.${index}.dependencies`"
+              label="依賴階段"
+            >
+              <el-select 
+                :id="`stage-${index}-dependencies`"
+                v-model="stage.dependencies"
+                multiple
+                placeholder="請選擇依賴的階段"
+                :disabled="index === 0"
+              >
+                <el-option
+                  v-for="(s, i) in form.stages.slice(0, index)"
+                  :key="i"
+                  :label="`階段${i + 1}: ${s.name}`"
+                  :value="i + 1"
+                />
+              </el-select>
+            </el-form-item>
+
+            <el-form-item 
+              :prop="`stages.${index}.description`"
+              label="階段說明"
+            >
+              <el-input
+                :id="`stage-${index}-description`"
+                v-model="stage.description"
+                type="textarea"
+                :rows="2"
+                placeholder="請輸入階段說明"
+              />
+            </el-form-item>
+          </div>
         </div>
       </el-form>
     </template>
@@ -334,6 +348,7 @@ watch(
   border-radius: 4px;
   padding: 20px;
   margin-bottom: 20px;
+  background-color: #f8f9fa;
 }
 
 .stage-header {
@@ -348,9 +363,73 @@ watch(
   color: #409eff;
 }
 
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
+:deep(.custom-steps .el-step .el-step__progress) {
+  height: 25px !important;
+  top: 10px !important;
+}
+
+:deep(.custom-steps .el-step .el-step__progress .el-step__progress-bar) {
+  height: 25px !important;
+}
+
+:deep(.el-step__line) {
+  height: 25px;
+  top: 10px;
+  background-color: #e4e7ed;
+  left: 0;
+  right: 0;
+  margin: 0;
+  width: 100%;
+}
+
+:deep(.el-step__line.is-finish) {
+  background-color: #67c23a;
+}
+
+:deep(.el-step__head.is-process .el-step__line) {
+  background-color: #409eff;
+}
+
+:deep(.el-step__icon) {
+  width: auto;
+  height: auto;
+  border: none;
+  background: transparent;
+  z-index: 2;
+  margin-bottom: 15px;
+}
+
+:deep(.el-step__title) {
+  font-size: 14px;
+  font-weight: bold;
+  margin-top: 8px;
+}
+
+:deep(.el-step__description) {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+:deep(.el-step__head) {
+  padding: 0;
+}
+
+:deep(.el-step.is-horizontal) {
+  position: relative;
+}
+
+:deep(.el-step.is-horizontal .el-step__line) {
+  position: absolute;
+  width: 100%;
+  left: 0;
+}
+
+:deep(.el-step.is-horizontal:first-child .el-step__line) {
+  left: 50%;
+  width: 50%;
+}
+
+:deep(.el-step.is-horizontal:last-child .el-step__line) {
+  width: 50%;
 }
 </style> 

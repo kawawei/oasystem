@@ -52,39 +52,13 @@
     </div>
 
     <!-- 任務列表 -->
-    <el-table
+    <TaskList
       v-loading="taskStore.loading"
-      :data="filteredTasks"
-      style="width: 100%"
-    >
-      <el-table-column prop="title" label="標題" />
-      <el-table-column prop="status" label="狀態" width="100">
-        <template #default="{ row }">
-          <el-tag :type="getStatusType(row.status)">
-            {{ getStatusText(row.status) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="priority" label="優先級" width="100">
-        <template #default="{ row }">
-          <el-tag :type="getPriorityType(row.priority)">
-            {{ getPriorityText(row.priority) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="150" fixed="right">
-        <template #default="{ row }">
-          <el-button-group>
-            <el-button size="small" @click="handleEdit(row)">編輯</el-button>
-            <el-button 
-              size="small" 
-              type="danger" 
-              @click="handleDelete(row)"
-            >刪除</el-button>
-          </el-button-group>
-        </template>
-      </el-table-column>
-    </el-table>
+      :tasks="filteredTasks"
+      @edit="handleEdit"
+      @delete="handleDelete"
+      @view="task => $router.push(`/task/${task.id}`)"
+    />
 
     <!-- 任務模板管理器 -->
     <TaskTemplateManager 
@@ -108,6 +82,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import TaskTemplateManager from './components/TaskTemplateManager.vue'
 import TaskDialog from './components/TaskDialog.vue'
+import TaskList from './components/TaskList.vue'
 import { Plus, Document, Setting } from '@element-plus/icons-vue'
 import type { Task, TaskTemplate, TaskForm, TaskStatus, TaskPriority } from '@/types/task'
 import { useTaskStore } from '@/stores/task'
@@ -272,29 +247,6 @@ const getPriorityText = (priority: TaskPriority) => {
     medium: '中',
     high: '高',
     urgent: '緊急'
-  }
-  return map[priority]
-}
-
-// 狀態類型映射
-const getStatusType = (status: TaskStatus) => {
-  const map: Record<TaskStatus, string> = {
-    pending: 'info',
-    processing: 'warning',
-    reviewing: 'primary',
-    completed: 'success',
-    cancelled: 'danger'
-  }
-  return map[status]
-}
-
-// 優先級類型映射
-const getPriorityType = (priority: TaskPriority) => {
-  const map: Record<TaskPriority, string> = {
-    low: 'info',
-    medium: 'warning',
-    high: 'danger',
-    urgent: 'danger'
   }
   return map[priority]
 }

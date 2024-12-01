@@ -28,19 +28,45 @@
     <el-card v-if="task">
       <template #header>
         <div class="card-header">
-          <div class="task-status">
-            <el-tag :type="getPriorityType(task.priority)">
-              {{ getPriorityText(task.priority) }}
-            </el-tag>
-            <el-tag :type="getStatusType(task.status)">
-              {{ getStatusText(task.status) }}
-            </el-tag>
+          <div class="task-info">
+            <h3>{{ task.title }}</h3>
+            <div class="task-tags">
+              <el-tag :type="getPriorityType(task.priority)">
+                {{ getPriorityText(task.priority) }}
+              </el-tag>
+              <el-tag :type="getStatusType(task.status)">
+                {{ getStatusText(task.status) }}
+              </el-tag>
+            </div>
+          </div>
+          <div class="header-operations">
+            <el-button-group>
+              <el-button 
+                type="danger" 
+                @click="handleDelete"
+                :disabled="task.status === 'completed'"
+              >
+                <el-icon><Delete /></el-icon>
+                刪除任務
+              </el-button>
+            </el-button-group>
           </div>
         </div>
       </template>
 
+      <!-- 任務進度 -->
+      <div class="progress-section">
+        <h4>任務進度</h4>
+        <el-progress 
+          :percentage="task.progress || 0"
+          :status="getProgressStatus(task.progress || 0)"
+          :stroke-width="20"
+          class="task-progress"
+        />
+      </div>
+
       <!-- 基本信息 -->
-      <el-descriptions :column="2" border>
+      <el-descriptions :column="2" border class="task-info-section">
         <el-descriptions-item label="創建時間">
           {{ formatDateTime(task.createdAt) }}
         </el-descriptions-item>
@@ -55,8 +81,9 @@
         </el-descriptions-item>
         <el-descriptions-item label="總進度" :span="2">
           <el-progress 
-            :percentage="task.progress"
-            :status="getProgressStatus(task.progress)"
+            :percentage="task.progress || 0"
+            :status="getProgressStatus(task.progress || 0)"
+            :stroke-width="20"
           />
         </el-descriptions-item>
         <el-descriptions-item label="任務描述" :span="2">
@@ -117,7 +144,7 @@
                 </el-button>
                 <el-button 
                   size="small"
-                  @click="handleUpdateProgress(task.id, row)"
+                  @click="handleUpdateProgress(row)"
                 >
                   更新進度
                 </el-button>
@@ -131,7 +158,7 @@
       <div class="comments-section">
         <h3>任務評論</h3>
         <TaskComments
-          :comments="task.comments"
+          :comments="task.comments || []"
           @add="handleAddComment"
         />
       </div>
@@ -172,10 +199,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import { ArrowLeft, Delete } from '@element-plus/icons-vue'
 import { useTaskStore } from '@/stores/task'
 import { taskStatusOptions, taskPriorityOptions } from '@/types/task'
 import type { Task } from '@/types/task'
@@ -198,7 +225,7 @@ const progressDialog = reactive({
 })
 
 // 獲取任務數據
-const task = computed(() => {
+const task = computed<Task | undefined>(() => {
   const taskId = parseInt(route.params.id as string)
   return taskStore.tasks.find(t => t.id === taskId)
 })
@@ -253,7 +280,7 @@ const getProgressStatus = (progress: number) => {
 
 // 獲取階段描述
 const getStageDescription = (stage: any) => {
-  return `負責人: ${stage.assignee.map(id => getUserName(id)).join(', ')}`
+  return `負責人: ${stage.assignee.map((id: number) => getUserName(id)).join(', ')}`
 }
 
 // 模擬用戶列表
@@ -285,7 +312,7 @@ const handleStageAction = async (taskId: number, stage: any) => {
 }
 
 // 處理進度更新
-const handleUpdateProgress = (taskId: number, stage: any) => {
+const handleUpdateProgress = (stage: any) => {
   progressDialog.stageId = stage.id
   progressDialog.form.progress = stage.progress
   progressDialog.visible = true
@@ -320,15 +347,26 @@ const handleDelete = async () => {
         type: 'warning'
       }
     )
+    
+    ElMessage.info('正在刪除任務...')
     await taskStore.deleteTask(task.value!.id)
     ElMessage.success('刪除成功')
     router.push('/task')
-  } catch {
-    // 用戶取消操作
+  } catch (error: any) {
+    if (error?.message === 'cancel') {
+      return // 用戶取消操作
+    }
+    
+    ElMessage.error(
+      error?.response?.data?.message || 
+      error?.message || 
+      '刪除任務失敗，請稍後重試'
+    )
+    console.error('Delete task error:', error)
   }
 }
 
-// 處理評論添加
+// 處理論添加
 const handleAddComment = async (data: { content: string; attachments: string[] }) => {
   await taskStore.addComment(task.value!.id, data.content, data.attachments)
   ElMessage.success('評論添加成功')
@@ -342,7 +380,8 @@ const handleTaskSubmit = async (form: any) => {
 }
 
 // 初始化
-onMounted(() => {
+onMounted(async () => {
+  await taskStore.fetchTasks()
   if (!task.value) {
     ElMessage.error('任務不存在')
     router.push('/task')
@@ -374,6 +413,74 @@ onMounted(() => {
 }
 
 .task-status {
+  display: flex;
+  gap: 10px;
+}
+
+.stages-section,
+.comments-section {
+  margin-top: 30px;
+}
+
+h3 {
+  margin-bottom: 20px;
+  font-weight: bold;
+  color: #303133;
+}
+
+.mx-1 {
+  margin: 0 5px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.review-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.task-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.task-info h3 {
+  margin: 0;
+  font-size: 20px;
+  color: #303133;
+}
+
+.task-tags {
+  display: flex;
+  gap: 10px;
+}
+
+.progress-section {
+  margin: 20px 0;
+  padding: 20px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+}
+
+.progress-section h4 {
+  margin: 0 0 15px 0;
+  color: #606266;
+}
+
+.task-progress {
+  margin: 10px 0;
+}
+
+.task-info-section {
+  margin-top: 20px;
+}
+
+.header-operations {
   display: flex;
   gap: 10px;
 }

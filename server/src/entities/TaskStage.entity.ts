@@ -48,6 +48,25 @@ export class TaskStage extends BaseEntity {
   @ManyToOne(() => Task, task => task.stages)
   task!: Task
 
+  async updateProgress(progress: number) {
+    if (progress < 0 || progress > 100) {
+      throw new AppError('進度必須在 0-100 之間', 400)
+    }
+
+    this.progress = progress
+    await this.save()
+
+    // 更新任務整體進度
+    if (this.task) {
+      const allStages = await TaskStage.find({ where: { task: { id: this.task.id } } })
+      const totalProgress = allStages.reduce((sum, stage) => sum + stage.progress, 0)
+      const averageProgress = Math.round(totalProgress / allStages.length)
+      
+      this.task.progress = averageProgress
+      await this.task.save()
+    }
+  }
+
   @BeforeUpdate()
   @BeforeInsert()
   async validateDependencies() {

@@ -25,6 +25,9 @@ router.get('/:id', taskController.getTask)
 // 更新任務階段狀態
 router.put('/:taskId/stages/:stageId/status', taskController.updateStageStatus)
 
+// 更新任務階段進度
+router.put('/:taskId/stages/:stageId/progress', taskController.updateStageProgress)
+
 // 更新任務階段依賴關係
 router.put('/:taskId/stages/:stageId/dependencies', taskController.updateStageDependencies)
 

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { Task, TaskStatus, ReportData } from '@/types/task'
+import type { Task, TaskStatus, ReportData, TaskTemplate, TaskComment } from '@/types/task'
 import { emailService as _emailService } from '@/services/email'
 import { api } from '../services/api'
 
@@ -37,7 +37,7 @@ export const useTaskStore = defineStore('task', {
     },
 
     generateReport(startDate: Date, endDate: Date): ReportData {
-      // 計算報表數據
+      // 計算��表數據
       const filteredTasks = this.tasks.filter(task => {
         const taskDate = new Date(task.createdAt)
         return taskDate >= startDate && taskDate <= endDate
@@ -79,12 +79,45 @@ export const useTaskStore = defineStore('task', {
       }
     },
 
-    async deleteTask(id: number) {
+    async updateTaskStatus(id: number, status: TaskStatus) {
       try {
-        await api.delete(`/tasks/${id}`)
-        this.tasks = this.tasks.filter(task => task.id !== id)
+        const response = await api.put(`/tasks/${id}/status`, { status })
+        const task = this.tasks.find(t => t.id === id)
+        if (task) {
+          task.status = status
+        }
+        return response.data
       } catch (error) {
+        console.error('Failed to update task status:', error)
+        throw error
+      }
+    },
+
+    async deleteTask(id: string | number) {
+      try {
+        // 先從本地狀態中移除
+        const taskIndex = this.tasks.findIndex(task => task.id === id)
+        if (taskIndex === -1) {
+          throw new Error('Task not found')
+        }
+        
+        // 調用 API 刪除
+        const response = await api.delete(`/tasks/${id}`)
+        
+        // 只有在 API 調用成功後才更新本地狀態
+        if (response.status === 200 || response.status === 204) {
+          this.tasks.splice(taskIndex, 1)
+          return true
+        } else {
+          throw new Error('Failed to delete task')
+        }
+      } catch (error: any) {
         console.error('Failed to delete task:', error)
+        if (error.response) {
+          console.error('Error response:', error.response.data)
+        }
+        // 如果刪除失敗，重新獲取任務列表
+        await this.fetchTasks()
         throw error
       }
     },
@@ -158,20 +191,119 @@ export const useTaskStore = defineStore('task', {
       const stage = task.stages.find(s => s.id === stageId)
       if (!stage) throw new Error('Stage not found')
 
-      stage.status = status
-      stage.progress = progress
+      try {
+        const response = await api.put(`/tasks/${taskId}/stages/${stageId}/status`, {
+          status,
+          progress
+        })
+        
+        const updatedStage = response.data.data
+        Object.assign(stage, updatedStage)
+        
+        // 更新任務整體進度
+        task.progress = Math.round(
+          task.stages.reduce((acc, s) => acc + s.progress, 0) / task.stages.length
+        )
 
-      // 更新任務整體進度
-      task.progress = Math.round(
-        task.stages.reduce((acc, s) => acc + s.progress, 0) / task.stages.length
-      )
-
-      // 如果所有階段都完成，將任務標記為完成
-      if (task.stages.every(s => s.status === 'completed')) {
-        task.status = 'completed'
+        return task
+      } catch (error) {
+        console.error('Failed to update stage status:', error)
+        throw error
       }
+    },
 
-      return task
+    async updateStageProgress(taskId: number, stageId: number, progress: number) {
+      const task = this.tasks.find(t => t.id === taskId)
+      if (!task) throw new Error('Task not found')
+
+      const stage = task.stages.find(s => s.id === stageId)
+      if (!stage) throw new Error('Stage not found')
+
+      try {
+        const response = await api.put(`/tasks/${taskId}/stages/${stageId}/progress`, {
+          progress
+        })
+        
+        const updatedStage = response.data.data
+        Object.assign(stage, updatedStage)
+        
+        // 更新任務整體進度
+        task.progress = Math.round(
+          task.stages.reduce((acc, s) => acc + s.progress, 0) / task.stages.length
+        )
+
+        return task
+      } catch (error) {
+        console.error('Failed to update stage progress:', error)
+        throw error
+      }
+    },
+
+    // 獲取任務模板列表
+    async getTemplates(): Promise<TaskTemplate[]> {
+      try {
+        const response = await api.get('/task-templates')
+        return (response.data as any).data as TaskTemplate[]
+      } catch (error) {
+        console.error('Failed to fetch templates:', error)
+        throw error
+      }
+    },
+
+    // 從模板創建任務
+    async createFromTemplate(templateId: number) {
+      try {
+        const response = await api.post(`/tasks/from-template/${templateId}`, {})
+        const task = (response.data as any).data as Task
+        this.tasks = [...this.tasks, task]
+        return task
+      } catch (error) {
+        console.error('Failed to create task from template:', error)
+        throw error
+      }
+    },
+
+    // 將任務保存為模板
+    async saveAsTemplate(task: Task, name: string) {
+      try {
+        const template = {
+          name,
+          description: task.description,
+          priority: task.priority,
+          stages: task.stages.map(stage => ({
+            name: stage.name,
+            description: stage.description,
+            order: stage.order,
+            dependencies: stage.dependencies
+          }))
+        }
+        const response = await api.post('/task-templates', template)
+        return response.data.data
+      } catch (error) {
+        console.error('Failed to save as template:', error)
+        throw error
+      }
+    },
+
+    async addComment(taskId: number, content: string, attachments: string[] = []) {
+      const task = this.tasks.find(t => t.id === taskId)
+      if (!task) throw new Error('Task not found')
+
+      try {
+        const response = await api.post(`/tasks/${taskId}/comments`, {
+          content,
+          attachments
+        })
+        
+        const newComment = response.data.data as TaskComment
+        if (!task.comments) task.comments = []
+        task.comments.push(newComment)
+        
+        return newComment
+      } catch (error) {
+        console.error('Failed to add comment:', error)
+        throw error
+      }
     }
   }
 }) 

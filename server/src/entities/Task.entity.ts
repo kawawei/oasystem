@@ -32,14 +32,14 @@ export class Task extends BaseEntity {
   @Column({ type: 'int', default: 0 })
   progress!: number;
 
+  @ManyToOne(() => User)
+  creator!: User;
+
   @Column({ type: 'datetime', nullable: true })
   startDate!: Date | null;
 
   @Column({ type: 'datetime', nullable: true })
   endDate!: Date | null;
-
-  @ManyToOne(() => User)
-  creator!: User;
 
   @OneToMany(() => TaskStage, stage => stage.task, {
     cascade: true

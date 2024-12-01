@@ -111,7 +111,7 @@ export const stageRules = {
     { required: true, message: '請選擇負責人', trigger: 'change' }
   ],
   startDate: [
-    { required: true, message: '請選擇開始日期', trigger: 'change' }
+    { required: true, message: '請選擇開始日���', trigger: 'change' }
   ],
   endDate: [
     { required: true, message: '請選擇結束日期', trigger: 'change' }
@@ -281,4 +281,21 @@ export const defaultTaskTemplates: TaskTemplate[] = [
       }
     ]
   }
-] 
+]
+
+// 報表數據接口
+export interface ReportData {
+  totalTasks: number
+  completionRate: number
+  averageDuration: number
+  overdueRate: number
+  statusDistribution: { name: string; value: number }[]
+  dailyTrend: {
+    date: string
+    newTasks: number
+    completedTasks: number
+    averageDuration: number
+    overdueTasks: number
+    overdueRate: number
+  }[]
+} 

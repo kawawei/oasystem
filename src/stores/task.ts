@@ -1,71 +1,7 @@
 import { defineStore } from 'pinia'
-import type { Task, TaskStatus, TaskPriority, ReportData } from '@/types/task'
+import type { Task, TaskStatus, ReportData } from '@/types/task'
 import { emailService as _emailService } from '@/services/email'
-import * as _axios from 'axios'
-
-// 添加測試數據
-const _mockTasks: Task[] = [
-  {
-    id: 1,
-    title: '製作產品宣傳視頻',
-    description: '為新產品製作宣傳視頻，包含產品特點介紹和使用演示',
-    status: 'processing' as TaskStatus,
-    priority: 'high' as TaskPriority,
-    startDate: '2024-01-20',
-    endDate: '2024-02-10',
-    progress: 30,
-    createdBy: 1,
-    createdAt: '2024-01-20T08:00:00Z',
-    updatedAt: '2024-01-20T10:30:00Z',
-    stages: [
-      {
-        id: 101,
-        taskId: 1,
-        name: 'A Cut',
-        order: 1,
-        status: 'completed' as TaskStatus,
-        assignee: [2],
-        startDate: '2024-01-20',
-        endDate: '2024-01-25',
-        progress: 100,
-        description: '完成初步剪輯'
-      },
-      {
-        id: 102,
-        taskId: 1,
-        name: '審片',
-        order: 2,
-        status: 'processing' as TaskStatus,
-        assignee: [1, 3],
-        startDate: '2024-01-26',
-        endDate: '2024-02-01',
-        progress: 50,
-        description: '審核並提供修改意見'
-      },
-      {
-        id: 103,
-        taskId: 1,
-        name: '字幕製作',
-        order: 3,
-        status: 'pending' as TaskStatus,
-        assignee: [2],
-        startDate: '2024-02-02',
-        endDate: '2024-02-10',
-        progress: 0,
-        description: '添加字幕和最終修改'
-      }
-    ],
-    comments: [
-      {
-        id: 1001,
-        taskId: 1,
-        content: '初剪已完成，請查看並提供修改意見',
-        createdBy: 2,
-        createdAt: '2024-01-25T15:00:00Z'
-      }
-    ]
-  }
-]
+import { api } from '../services/api'
 
 export const useTaskStore = defineStore('task', {
   state: () => ({
@@ -77,8 +13,8 @@ export const useTaskStore = defineStore('task', {
     async fetchTasks() {
       this.loading = true
       try {
-        // 臨時：返回測試數據
-        this.tasks = _mockTasks
+        const response = await api.get<Task[]>('/tasks')
+        this.tasks = response.data.data
         return this.tasks
       } catch (error) {
         console.error('Failed to fetch tasks:', error)
@@ -90,13 +26,8 @@ export const useTaskStore = defineStore('task', {
 
     async addTask(task: Task) {
       try {
-        // 臨時模擬：生成新的任務 ID
-        const newTask = {
-          ...task,
-          id: Date.now(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
+        const response = await api.post<Task>('/tasks', task)
+        const newTask = response.data.data
         this.tasks = [...this.tasks, newTask]
         return newTask
       } catch (error) {
@@ -140,12 +71,8 @@ export const useTaskStore = defineStore('task', {
 
     async updateTask(id: number, task: Task) {
       try {
-        const response = await fetch(`/api/tasks/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(task)
-        })
-        return await response.json()
+        const response = await api.put(`/tasks/${id}`, task)
+        return response.data
       } catch (error) {
         console.error('Failed to update task:', error)
         throw error
@@ -154,7 +81,7 @@ export const useTaskStore = defineStore('task', {
 
     async deleteTask(id: number) {
       try {
-        await fetch(`/api/tasks/${id}`, { method: 'DELETE' })
+        await api.delete(`/tasks/${id}`)
         this.tasks = this.tasks.filter(task => task.id !== id)
       } catch (error) {
         console.error('Failed to delete task:', error)

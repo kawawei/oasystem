@@ -8,7 +8,7 @@ const taskController = {
   getTasks: (async (req: Request, res: Response) => {
     try {
       const tasks = await Task.find({
-        relations: ['assignee', 'creator']
+        relations: ['creator', 'stages', 'comments']
       })
       res.json({
         success: true,
@@ -35,7 +35,18 @@ const taskController = {
       }
 
       const task = new Task()
-      Object.assign(task, req.body)
+      const taskData = { ...req.body }
+      delete taskData.id
+      
+      if (taskData.stages) {
+        taskData.stages = taskData.stages.map((stage: any) => {
+          const newStage = { ...stage }
+          delete newStage.id
+          return newStage
+        })
+      }
+      
+      Object.assign(task, taskData)
       task.creator = req.user as User
       
       const savedTask = await task.save()

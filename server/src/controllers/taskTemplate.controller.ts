@@ -41,8 +41,13 @@ const taskTemplateController: TaskTemplateController = {
       template.name = templateData.name
       template.description = templateData.description
       template.category = templateData.category
+      template.priority = templateData.priority
       
-      template.stages = templateData.stages.map((stageData: any) => {
+      // 先保存模板
+      await template.save()
+      
+      // 創建並保存階段
+      const stages = await Promise.all(templateData.stages.map(async (stageData: any) => {
         const stage = new TaskTemplateStage()
         stage.name = stageData.name
         stage.description = stageData.description
@@ -51,17 +56,34 @@ const taskTemplateController: TaskTemplateController = {
         stage.estimatedHours = stageData.estimatedHours
         stage.dependencies = stageData.dependencies
         stage.template = template
-        return stage
-      })
-      
-      await template.save()
+        return await stage.save()
+      }))
+
+      // 構造返回數據，避免循環引用
+      const responseData = {
+        ...template,
+        stages: stages.map(stage => ({
+          id: stage.id,
+          name: stage.name,
+          description: stage.description,
+          order: stage.order,
+          assignee: stage.assignee,
+          estimatedHours: stage.estimatedHours,
+          dependencies: stage.dependencies
+        }))
+      }
       
       res.json({
         success: true,
-        data: template
+        data: responseData
       })
     } catch (error) {
-      throw new AppError('創建模板失敗', 500)
+      console.error('創建模板失敗:', error)
+      res.status(500).json({
+        success: false,
+        message: '創建模板失敗',
+        error: error instanceof Error ? error.message : '未知錯誤'
+      })
     }
   },
 

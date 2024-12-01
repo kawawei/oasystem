@@ -35,10 +35,52 @@
       </div>
     </div>
 
+    <!-- 篩選表單 -->
+    <el-card class="filter-card">
+      <el-form :model="filterForm" inline>
+        <el-form-item label="狀態">
+          <el-select v-model="filterForm.status" clearable>
+            <el-option 
+              v-for="option in taskStatusOptions" 
+              :key="option.value" 
+              :label="option.label" 
+              :value="option.value" 
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="負責人">
+          <el-select v-model="filterForm.assignee" clearable>
+            <el-option 
+              v-for="user in userList" 
+              :key="user.id" 
+              :label="user.name" 
+              :value="user.id" 
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleSearch">搜索</el-button>
+          <el-button @click="resetFilter">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
+    <!-- 批量操作工具栏 -->
+    <div v-if="selection.length > 0" class="batch-toolbar">
+      <span class="selection-info">已選擇 {{ selection.length }} 項</span>
+      <div class="batch-actions">
+        <el-button-group>
+          <el-button @click="handleBatchUpdateStatus('completed')">標記完成</el-button>
+          <el-button @click="handleBatchUpdateStatus('cancelled')">標記取消</el-button>
+          <el-button type="danger" @click="handleBatchDelete">批量刪除</el-button>
+        </el-button-group>
+      </div>
+    </div>
+
     <!-- 任務列表 -->
     <el-card>
       <el-table 
-        :data="taskStore.tasks"
+        :data="filteredTasks"
         @selection-change="handleSelectionChange"
         style="width: 100%"
       >
@@ -63,6 +105,8 @@
             <el-progress 
               :percentage="scope.row.progress"
               :status="getProgressStatus(scope.row.progress)"
+              @click="handleUpdateProgress({ taskId: scope.row.id, stage: scope.row })"
+              style="cursor: pointer"
             />
           </template>
         </el-table-column>
@@ -119,6 +163,23 @@
         @delete="handleTaskDelete"
       />
     </el-dialog>
+
+    <!-- 進度更新對話框 -->
+    <el-dialog
+      v-model="progressDialog.visible"
+      title="更新進度"
+      width="30%"
+    >
+      <el-form>
+        <el-form-item label="進度">
+          <el-slider v-model="progressDialog.form.progress" :step="10" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="progressDialog.visible = false">取消</el-button>
+        <el-button type="primary" @click="handleProgressSubmit">確定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -127,8 +188,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, TrendCharts, Upload } from '@element-plus/icons-vue'
 import { useTaskStore } from '@/stores/task'
-import { taskStatusOptions, taskPriorityOptions } from '@/types/task'
-import type { Task } from '@/types/task'
+import { taskStatusOptions, taskPriorityOptions, type TaskStatus, type Task } from '@/types/task'
 import TaskDialog from './components/TaskDialog.vue'
 import { ExportUtils } from '@/utils/exportUtils'
 import { useRouter } from 'vue-router'
@@ -275,9 +335,6 @@ onMounted(() => {
   taskStore.init()
 })
 
-// 報表顯示控制
-const showReport = ref(false)
-
 // 選中的任務
 const selection = ref<Task[]>([])
 
@@ -374,15 +431,15 @@ const handleBatchDelete = async () => {
 }
 
 // 獲取狀態類型
-const getStatusType = (status: string) => {
-  const map: Record<string, string> = {
+const getStatusType = (status: string): 'success' | 'warning' | 'info' | 'danger' | 'primary' => {
+  const map: Record<string, 'success' | 'warning' | 'info' | 'danger' | 'primary'> = {
     pending: 'info',
     processing: 'primary',
     reviewing: 'warning',
     completed: 'success',
     cancelled: 'danger'
   }
-  return map[status] || ''
+  return map[status] || 'info'
 }
 
 // 獲取狀態文字
@@ -392,14 +449,14 @@ const getStatusText = (status: string) => {
 }
 
 // 獲取優先級類型
-const getPriorityType = (priority: string) => {
-  const map: Record<string, string> = {
+const getPriorityType = (priority: string): 'success' | 'warning' | 'info' | 'danger' | 'primary' => {
+  const map: Record<string, 'success' | 'warning' | 'info' | 'danger' | 'primary'> = {
     low: 'info',
-    medium: '',
+    medium: 'primary',
     high: 'warning',
     urgent: 'danger'
   }
-  return map[priority] || ''
+  return map[priority] || 'info'
 }
 
 // 獲取優先級文字
@@ -409,9 +466,10 @@ const getPriorityText = (priority: string) => {
 }
 
 // 獲取進度狀態
-const getProgressStatus = (progress: number) => {
+const getProgressStatus = (progress: number): '' | 'success' | 'exception' | 'warning' => {
   if (progress === 100) return 'success'
   if (progress >= 80) return 'warning'
+  if (progress >= 50) return ''
   return ''
 }
 

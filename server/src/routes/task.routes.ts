@@ -1,8 +1,8 @@
-﻿import { Router } from 'express'
+﻿import express, { Router, Request, Response } from 'express'
 import taskController from '../controllers/task.controller'
 import { authMiddleware } from '../middleware/auth'
 
-const router = Router()
+const router = express.Router()
 
 // 所有路由都需要認證
 router.use(authMiddleware)
@@ -18,5 +18,8 @@ router.put('/:id', taskController.updateTask)
 
 // 刪除任務
 router.delete('/:id', taskController.deleteTask)
+
+// 獲取單個任務
+router.get('/:id', taskController.getTask)
 
 export default router

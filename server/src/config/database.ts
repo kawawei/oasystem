@@ -23,7 +23,12 @@ export const initializeDatabase = async () => {
       database: 'oasystem',
       entities: [User, Task, CalendarEvent, ChatMessage],
       synchronize: process.env.NODE_ENV === 'development',
-      logging: true
+      logging: true,
+      extra: {
+        connectionLimit: 10
+      },
+      dateStrings: true,
+      timezone: '+08:00'
     });
     console.log('Database connected successfully');
     return connection;

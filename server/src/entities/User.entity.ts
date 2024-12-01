@@ -49,14 +49,25 @@ export class User extends BaseEntity {
 
   @BeforeInsert()
   async hashPassword() {
-    this.password = await bcrypt.hash(this.password, 10);
+    if (this.password) {
+      const salt = await bcrypt.genSalt(10)
+      this.password = await bcrypt.hash(this.password, salt)
+      console.log('Password hashed successfully')
+    }
   }
 
   async comparePassword(candidatePassword: string): Promise<boolean> {
-    console.log('Comparing passwords:', {
-      candidate: candidatePassword,
-      hashed: this.password
-    });
-    return bcrypt.compare(candidatePassword, this.password);
+    try {
+      console.log('Comparing passwords:', {
+        candidate: candidatePassword,
+        hashed: this.password
+      })
+      const result = await bcrypt.compare(candidatePassword, this.password)
+      console.log('Password comparison result:', result)
+      return result
+    } catch (error) {
+      console.error('Password comparison error:', error)
+      return false
+    }
   }
 } 

@@ -1,6 +1,10 @@
 <template>
   <div class="task-list">
-    <el-table :data="tasks" style="width: 100%">
+    <el-table
+      :data="props.tasks"
+      style="width: 100%"
+      border
+    >
       <el-table-column type="expand">
         <template #default="{ row }">
           <div class="stage-list">
@@ -19,6 +23,7 @@
                   <el-tag 
                     v-for="userId in stage.assignee"
                     :key="userId"
+                    type="info"
                     class="mx-1"
                   >
                     {{ getUserName(userId) }}
@@ -27,7 +32,7 @@
               </el-table-column>
               <el-table-column prop="status" label="狀態" width="120">
                 <template #default="{ row: stage }">
-                  <el-tag :type="getStatusType(stage.status)">
+                  <el-tag :type="getStatusType(stage.status) || 'info'">
                     {{ getStatusText(stage.status) }}
                   </el-tag>
                 </template>
@@ -36,7 +41,7 @@
                 <template #default="{ row: stage }">
                   <el-progress 
                     :percentage="stage.progress"
-                    :status="getProgressStatus(stage.progress)"
+                    :status="stage.progress === 100 ? 'success' : stage.progress >= 80 ? 'warning' : stage.progress >= 50 ? 'primary' : 'info'"
                   />
                 </template>
               </el-table-column>
@@ -67,14 +72,14 @@
       <el-table-column prop="title" label="任務標題" min-width="200" />
       <el-table-column prop="priority" label="優先級" width="100">
         <template #default="{ row }">
-          <el-tag :type="getPriorityType(row.priority)">
+          <el-tag :type="getPriorityType(row.priority) || 'info'">
             {{ getPriorityText(row.priority) }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="status" label="狀態" width="120">
         <template #default="{ row }">
-          <el-tag :type="getStatusType(row.status)">
+          <el-tag :type="getStatusType(row.status) || 'info'">
             {{ getStatusText(row.status) }}
           </el-tag>
         </template>
@@ -83,7 +88,7 @@
         <template #default="{ row }">
           <el-progress 
             :percentage="row.progress"
-            :status="getProgressStatus(row.progress)"
+            :type="row.progress === 100 ? 'success' : 'primary'"
           />
         </template>
       </el-table-column>
@@ -108,7 +113,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useTaskStore } from '@/stores/task'
 import { taskStatusOptions, taskPriorityOptions } from '@/types/task'
 import type { Task } from '@/types/task'
@@ -120,6 +124,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'edit', task: Task): void
   (e: 'delete', task: Task): void
+  (e: 'updateProgress', data: { taskId: number, stage: any }): void
 }>()
 
 const taskStore = useTaskStore()
@@ -143,7 +148,7 @@ const getActiveStageIndex = (task: Task) => {
 
 // 獲取階段描述
 const getStageDescription = (stage: any) => {
-  return `負責人: ${stage.assignee.map(id => getUserName(id)).join(', ')}`
+  return `負責人: ${stage.assignee.map((id: number) => getUserName(id)).join(', ')}`
 }
 
 // 獲取狀態類型
@@ -155,7 +160,7 @@ const getStatusType = (status: string) => {
     completed: 'success',
     cancelled: 'danger'
   }
-  return map[status] || ''
+  return map[status] || 'info'
 }
 
 // 獲取狀態文字
@@ -168,24 +173,17 @@ const getStatusText = (status: string) => {
 const getPriorityType = (priority: string) => {
   const map: Record<string, string> = {
     low: 'info',
-    medium: '',
+    medium: 'primary',
     high: 'warning',
     urgent: 'danger'
   }
-  return map[priority] || ''
+  return map[priority] || 'info'
 }
 
 // 獲取優先級文字
 const getPriorityText = (priority: string) => {
   const option = taskPriorityOptions.find(opt => opt.value === priority)
   return option ? option.label : '未知'
-}
-
-// 獲取進度狀態
-const getProgressStatus = (progress: number) => {
-  if (progress === 100) return 'success'
-  if (progress >= 80) return 'warning'
-  return ''
 }
 
 // 檢查階段是否可以開始

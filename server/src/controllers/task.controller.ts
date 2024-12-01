@@ -1,18 +1,11 @@
-﻿import { Request, Response } from 'express'
+﻿import { Request, Response, RequestHandler } from 'express'
 import { Task } from '../entities/Task.entity'
+import { User } from '../entities/User.entity'
 import { AppError } from '../utils/AppError'
 
-// 添加控制器類型聲明
-interface TaskController {
-  getTasks: (req: Request, res: Response) => Promise<void>
-  createTask: (req: Request, res: Response) => Promise<void>
-  updateTask: (req: Request, res: Response) => Promise<void>
-  deleteTask: (req: Request, res: Response) => Promise<void>
-}
-
-const taskController: TaskController = {
+const taskController = {
   // 獲取任務列表
-  getTasks: async (req: Request, res: Response) => {
+  getTasks: (async (req: Request, res: Response) => {
     try {
       const tasks = await Task.find({
         relations: ['assignee', 'creator']
@@ -22,15 +15,28 @@ const taskController: TaskController = {
         data: tasks
       })
     } catch (error) {
-      throw new AppError('獲取任務列表失敗', 500)
+      console.error('Get tasks error:', error)
+      res.status(500).json({
+        success: false,
+        message: '獲取任務列表失敗',
+        error: error instanceof Error ? error.message : '未知錯誤'
+      })
     }
-  },
+  }) as RequestHandler,
 
   // 創建任務
-  createTask: async (req: Request, res: Response) => {
+  createTask: (async (req: Request, res: Response) => {
     try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: '未授權'
+        })
+      }
+
       const task = new Task()
       Object.assign(task, req.body)
+      task.creator = req.user as User
       
       const savedTask = await task.save()
       
@@ -39,18 +45,26 @@ const taskController: TaskController = {
         data: savedTask
       })
     } catch (error) {
-      throw new AppError('創建任務失敗', 500)
+      console.error('Create task error:', error)
+      res.status(500).json({
+        success: false,
+        message: '創建任務失敗',
+        error: error instanceof Error ? error.message : '未知錯誤'
+      })
     }
-  },
+  }) as RequestHandler,
 
   // 更新任務
-  updateTask: async (req: Request, res: Response) => {
+  updateTask: (async (req: Request, res: Response) => {
     try {
       const { id } = req.params
       const task = await Task.findOne({ where: { id } })
       
       if (!task) {
-        throw new AppError('任務不存在', 404)
+        return res.status(404).json({
+          success: false,
+          message: '任務不存在'
+        })
       }
 
       Object.assign(task, req.body)
@@ -61,18 +75,26 @@ const taskController: TaskController = {
         data: updatedTask
       })
     } catch (error) {
-      throw new AppError('更新任務失敗', 500)
+      console.error('Update task error:', error)
+      res.status(500).json({
+        success: false,
+        message: '更新任務失敗',
+        error: error instanceof Error ? error.message : '未知錯誤'
+      })
     }
-  },
+  }) as RequestHandler,
 
   // 刪除任務
-  deleteTask: async (req: Request, res: Response) => {
+  deleteTask: (async (req: Request, res: Response) => {
     try {
       const { id } = req.params
       const task = await Task.findOne({ where: { id } })
       
       if (!task) {
-        throw new AppError('任務不存在', 404)
+        return res.status(404).json({
+          success: false,
+          message: '任務不存在'
+        })
       }
 
       await task.remove()
@@ -81,9 +103,44 @@ const taskController: TaskController = {
         message: '刪除成功'
       })
     } catch (error) {
-      throw new AppError('刪除任務失敗', 500)
+      console.error('Delete task error:', error)
+      res.status(500).json({
+        success: false,
+        message: '刪除任務失敗',
+        error: error instanceof Error ? error.message : '未知錯誤'
+      })
     }
-  }
+  }) as RequestHandler,
+
+  // 獲取單個任務
+  getTask: (async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params
+      const task = await Task.findOne({ 
+        where: { id },
+        relations: ['assignee', 'creator']
+      })
+      
+      if (!task) {
+        return res.status(404).json({
+          success: false,
+          message: '任務不存在'
+        })
+      }
+
+      res.json({
+        success: true,
+        data: task
+      })
+    } catch (error) {
+      console.error('Get task error:', error)
+      res.status(500).json({
+        success: false,
+        message: '獲取任務失敗',
+        error: error instanceof Error ? error.message : '未知錯誤'
+      })
+    }
+  }) as RequestHandler
 }
 
 export default taskController

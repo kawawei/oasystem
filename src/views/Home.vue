@@ -36,8 +36,8 @@
             <div class="card-header">
               <span>員工出勤趨勢</span>
               <el-radio-group v-model="attendancePeriod" size="small">
-                <el-radio-button label="week">本週</el-radio-button>
-                <el-radio-button label="month">本月</el-radio-button>
+                <el-radio-button value="week">本週</el-radio-button>
+                <el-radio-button value="month">本月</el-radio-button>
               </el-radio-group>
             </div>
           </template>

@@ -32,8 +32,8 @@ export class Task extends BaseEntity {
   @ManyToOne(() => User)
   creator!: User;
 
-  @Column({ type: 'datetime' })
-  dueDate!: Date;
+  @Column({ type: 'datetime', nullable: true })
+  dueDate?: Date;
 
   @CreateDateColumn()
   createdAt!: Date;

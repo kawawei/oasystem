@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import type { Task, TaskForm, TaskComment, TaskStatus, TaskPriority } from '@/types/task'
 import { storageService } from '@/services/storage'
 import { emailService } from '@/services/email'
+import axios from 'axios'
 
 const STORAGE_KEY = 'task_list'
 
@@ -465,6 +466,26 @@ export const useTaskStore = defineStore('task', {
       console.log('導出報表數據', statistics)
       
       return statistics
+    },
+
+    // 更新任務狀態
+    async updateTaskStatus(taskId: number, status: TaskStatus) {
+      try {
+        interface ApiResponse {
+          success: boolean;
+          data?: Task;
+        }
+        const response = await axios.put<ApiResponse>(`/api/tasks/${taskId}`, { status })
+        if (response.data.success) {
+          const index = this.tasks.findIndex(task => task.id === taskId)
+          if (index > -1) {
+            this.tasks[index] = { ...this.tasks[index], status }
+          }
+        }
+      } catch (error) {
+        console.error('Update task status error:', error)
+        throw error
+      }
     }
   }
 }) 

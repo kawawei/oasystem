@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize')
 
 module.exports = (sequelize) => {
-  const Task = sequelize.define('Task', {
+  const Phase = sequelize.define('Phase', {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
@@ -13,31 +13,47 @@ module.exports = (sequelize) => {
     },
     description: {
       type: DataTypes.TEXT,
-      allowNull: true
+      allowNull: true,
+      defaultValue: ''
     },
     status: {
       type: DataTypes.ENUM('pending', 'in_progress', 'completed'),
       defaultValue: 'pending'
     },
-    priority: {
-      type: DataTypes.ENUM('low', 'medium', 'high'),
-      defaultValue: 'medium'
+    order: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0
     },
     dueDate: {
       type: DataTypes.DATE,
       allowNull: true
     },
-    phaseId: {
+    progress: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      validate: {
+        min: 0,
+        max: 100
+      }
+    },
+    assignedTo: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: 'Phases',
+        model: 'Users',
+        key: 'id'
+      }
+    },
+    projectId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'Projects',
         key: 'id'
       }
     }
-  }, {
-    timestamps: true
   })
 
-  return Task
+  return Phase
 } 

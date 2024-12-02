@@ -10,15 +10,12 @@ module.exports = (sequelize) => {
     username: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true
+      unique: 'username_unique'
     },
     email: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
-      validate: {
-        isEmail: true
-      }
+      unique: 'email_unique'
     },
     password: {
       type: DataTypes.STRING,

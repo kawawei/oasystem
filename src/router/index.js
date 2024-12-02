@@ -42,6 +42,17 @@ const routes = [
         path: 'search',
         name: '搜尋',
         component: () => import('../views/search/index.vue')
+      },
+      {
+        path: 'projects',
+        name: '專案管理',
+        component: () => import('../views/project/ProjectList.vue')
+      },
+      {
+        path: 'projects/:id',
+        name: '專案詳情',
+        component: () => import('../views/project/ProjectDetail.vue'),
+        props: true
       }
     ]
   }

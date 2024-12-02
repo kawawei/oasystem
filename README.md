@@ -22,13 +22,24 @@
 
 ## 部署
 
-### 後端部署 (Railway)
-1. 創建 Railway 帳號並連接 GitHub
-2. 創建新專案並選擇此倉庫
-3. 設置環境變量：
-   - DB_HOST
-   - DB_USER
-   - DB_PASSWORD
-   - DB_NAME
-   - JWT_SECRET
-   - NODE_ENV=production
+### 後端部署
+- 創建 Render 帳號並連接 GitHub
+- 創建 Web Service
+- 設置環境變量：
+  - DB_HOST
+  - DB_USER
+  - DB_PASSWORD
+  - DB_NAME
+  - JWT_SECRET
+  - NODE_ENV=production
+
+## 功能特點
+
+- 用戶認證系統
+- 任務管理
+- 專案管理
+  - 專案階段劃分
+  - 進度追蹤
+  - 人員分配
+- 即時通訊
+- 儀表板

@@ -31,6 +31,11 @@
           <i class="fas fa-search"></i>
           <span v-show="!isCollapsed">搜尋</span>
         </router-link>
+
+        <router-link to="/projects" class="menu-item" :title="isCollapsed ? '專案管理' : ''">
+          <i class="fas fa-project-diagram"></i>
+          <span v-show="!isCollapsed">專案管理</span>
+        </router-link>
       </nav>
 
       <div class="user-section">

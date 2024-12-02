@@ -7,6 +7,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// 健康檢查路由
+app.get('/', (req, res) => {
+  res.json({ status: 'ok' })
+})
+
 // 註冊路由
 app.use('/api/auth', authRoutes);
 

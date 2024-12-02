@@ -167,6 +167,8 @@ import * as echarts from 'echarts'
 import type { ECharts, EChartsCoreOption as EChartsOption } from 'echarts/core'
 import { useTaskStore } from '@/stores/task'
 import { ElMessage } from 'element-plus'
+import type { ECOption } from 'vue-echarts'
+import VChart from 'vue-echarts'
 
 const taskStore = useTaskStore()
 
@@ -237,6 +239,60 @@ interface TableDataItem {
 }
 
 const tableData = ref<TableDataItem[]>([])
+
+// 圖表引用
+const statusChart = ref<typeof VChart | null>(null)
+const progressChart = ref<typeof VChart | null>(null)
+
+// 圖表選項
+const statusOption = ref<ECOption>({
+  title: {
+    text: '任務狀態分佈'
+  },
+  tooltip: {
+    trigger: 'item'
+  },
+  legend: {
+    orient: 'vertical',
+    left: 'left'
+  },
+  series: [
+    {
+      type: 'pie',
+      radius: '50%',
+      data: [],
+      emphasis: {
+        itemStyle: {
+          shadowBlur: 10,
+          shadowOffsetX: 0,
+          shadowColor: 'rgba(0, 0, 0, 0.5)'
+        }
+      }
+    }
+  ]
+})
+
+const progressOption = ref<ECOption>({
+  title: {
+    text: '任務進度分佈'
+  },
+  tooltip: {
+    trigger: 'axis'
+  },
+  xAxis: {
+    type: 'category',
+    data: ['0-20%', '21-40%', '41-60%', '61-80%', '81-100%']
+  },
+  yAxis: {
+    type: 'value'
+  },
+  series: [
+    {
+      data: [],
+      type: 'bar'
+    }
+  ]
+})
 
 // 初始化圖表
 const initCharts = () => {

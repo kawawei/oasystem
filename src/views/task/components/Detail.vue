@@ -101,7 +101,7 @@
                   size="small"
                   :type="row.status === 'processing' ? 'success' : 'primary'"
                   :disabled="!canStartStage(task.id, row.id)"
-                  @click="handleStageAction(task.id, row)"
+                  @click="handleStageAction(task.id, row.id)"
                 >
                   {{ row.status === 'processing' ? '完成' : '開始' }}
                 </el-button>
@@ -262,13 +262,21 @@ const canStartStage = (taskId: number, stageId: number) => {
 }
 
 // 處理階段操作
-const handleStageAction = async (taskId: number, stage: any) => {
-  if (stage.status === 'processing') {
-    await taskStore.updateStageStatus(taskId, stage.id, 'completed', 100)
-    ElMessage.success('階段已完成')
-  } else {
-    await taskStore.updateStageStatus(taskId, stage.id, 'processing', 0)
-    ElMessage.success('階段已開始')
+const handleStageAction = async (taskId: number, stageId: number) => {
+  try {
+    const stage = props.task.stages.find(s => s.id === stageId)
+    if (!stage) return
+    
+    if (stage.status === 'processing') {
+      await taskStore.updateStageStatus(taskId, stageId, 'completed', 100)
+      ElMessage.success('階段已完成')
+    } else {
+      await taskStore.updateStageStatus(taskId, stageId, 'processing', 0)
+      ElMessage.success('階段已開始')
+    }
+  } catch (error) {
+    console.error('Failed to update stage:', error)
+    ElMessage.error('操作失敗')
   }
 }
 
@@ -321,11 +329,18 @@ const handleAddComment = async (data: { content: string; attachments: string[] }
 }
 
 // 處理任務更新
-const handleTaskSubmit = async (form: any) => {
-  const updatedTask = await taskStore.updateTask(props.task.id, form)
-  emit('update', updatedTask)
-  dialogVisible.value = false
-  ElMessage.success('更新成功')
+const handleTaskSubmit = async (form: Task) => {
+  try {
+    const response = await taskStore.updateTask(props.task.id, form)
+    if (response.data) {
+      Object.assign(props.task, response.data)
+      dialogVisible.value = false
+      ElMessage.success('更新成功')
+    }
+  } catch (error) {
+    console.error('Failed to update task:', error)
+    ElMessage.error('更新失敗')
+  }
 }
 </script>
 

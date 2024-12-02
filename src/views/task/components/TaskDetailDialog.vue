@@ -31,7 +31,7 @@
         </div>
       </div>
 
-      <!-- 階段信息 -->
+      <!-- 階段���息 -->
       <div class="task-stages">
         <h4>任務階段</h4>
         <el-steps :active="getActiveStageIndex(task)" finish-status="success">
@@ -138,13 +138,33 @@ const userList = [
 ]
 
 // 獲取用戶名稱
-const getUserName = (userId: number) => {
-  return userList.find(user => user.id === userId)?.name || '未知用戶'
+const getUserName = (userId: number): string => {
+  const user = userList.find(user => user.id === userId)
+  return user ? user.name : '未知用戶'
 }
 
 // 處理添加評論
 const handleAddComment = (data: { content: string; attachments: string[] }) => {
   emit('add-comment', data)
+}
+
+// 處理階段操作
+const handleStageAction = async (taskId: number, stageId: number) => {
+  try {
+    const stage = task.value?.stages.find(s => s.id === stageId)
+    if (!stage) return
+    
+    if (stage.status === 'processing') {
+      await taskStore.updateStageStatus(taskId, stageId, 'completed', 100)
+      ElMessage.success('階段已完成')
+    } else {
+      await taskStore.updateStageStatus(taskId, stageId, 'processing', 0)
+      ElMessage.success('階段已開始')
+    }
+  } catch (error) {
+    console.error('Failed to update stage:', error)
+    ElMessage.error('操作失敗')
+  }
 }
 </script>
 

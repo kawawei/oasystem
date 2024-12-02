@@ -65,21 +65,30 @@
 
 <script>
 import ThemeToggle from '@/components/ThemeToggle.vue'
+import { useUserStore } from '@/stores/user'
 
 export default {
   name: 'MainLayout',
   components: {
     ThemeToggle
   },
+  setup() {
+    const userStore = useUserStore()
+    return { userStore }
+  },
   data() {
     return {
       isCollapsed: false,
-      username: '使用者',
-      role: '管理員',
       avatar: 'https://ui-avatars.com/api/?name=使用者&background=0071e3&color=fff'
     }
   },
   computed: {
+    username() {
+      return this.userStore.username
+    },
+    role() {
+      return this.userStore.userRole
+    },
     currentPath() {
       return this.$route.name || '首頁'
     }
@@ -89,7 +98,7 @@ export default {
       this.isCollapsed = !this.isCollapsed
     },
     handleLogout() {
-      // TODO: 實現登出邏輯
+      this.userStore.logout()
       this.$router.push('/login')
     }
   }

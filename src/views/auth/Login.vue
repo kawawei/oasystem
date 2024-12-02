@@ -46,10 +46,16 @@
 
 <script>
 import ThemeToggle from '@/components/ThemeToggle.vue'
+import { useUserStore } from '@/stores/user'
+import { authService } from '@/services/auth'
 
 export default {
   components: {
     ThemeToggle
+  },
+  setup() {
+    const userStore = useUserStore()
+    return { userStore }
   },
   data() {
     return {
@@ -58,11 +64,27 @@ export default {
     }
   },
   methods: {
-    handleLogin() {
-      // TODO: 實現登入邏輯
+    async handleLogin() {
+      try {
+        const response = await authService.login(this.username, this.password)
+        this.userStore.setUser(response.user)
+        this.userStore.setToken(response.token)
+        this.$router.push('/dashboard')
+      } catch (error) {
+        alert(error.response?.data?.message || '用戶名或密碼錯誤')
+      }
     },
-    handleGoogleLogin() {
-      // TODO: 實現 Google 登入邏輯
+    async handleGoogleLogin() {
+      try {
+        // TODO: 獲取 Google OAuth token
+        const token = 'google-token'
+        const response = await authService.googleLogin(token)
+        this.userStore.setUser(response.user)
+        this.userStore.setToken(response.token)
+        this.$router.push('/dashboard')
+      } catch (error) {
+        alert(error.response?.data?.message || 'Google 登入失敗')
+      }
     }
   }
 }

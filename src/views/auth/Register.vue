@@ -62,10 +62,16 @@
 
 <script>
 import ThemeToggle from '@/components/ThemeToggle.vue'
+import { useUserStore } from '@/stores/user'
+import { authService } from '@/services/auth'
 
 export default {
   components: {
     ThemeToggle
+  },
+  setup() {
+    const userStore = useUserStore()
+    return { userStore }
   },
   data() {
     return {
@@ -76,15 +82,35 @@ export default {
     }
   },
   methods: {
-    handleRegister() {
+    async handleRegister() {
       if (this.password !== this.confirmPassword) {
         alert('密碼不一致')
         return
       }
-      // TODO: 實現註冊邏輯
+      try {
+        const userData = {
+          username: this.username,
+          email: this.email,
+          password: this.password
+        }
+        const response = await authService.register(userData)
+        this.userStore.setUser(response.user)
+        this.userStore.setToken(response.token)
+        this.$router.push('/dashboard')
+      } catch (error) {
+        alert(error.response?.data?.message || '用戶名已存在')
+      }
     },
-    handleGoogleRegister() {
-      // TODO: 實現 Google 註冊邏輯
+    async handleGoogleRegister() {
+      try {
+        const token = 'google-token'
+        const response = await authService.googleLogin(token)
+        this.userStore.setUser(response.user)
+        this.userStore.setToken(response.token)
+        this.$router.push('/dashboard')
+      } catch (error) {
+        alert(error.response?.data?.message || 'Google 註冊失敗')
+      }
     }
   }
 }

@@ -2,21 +2,34 @@
   "name": "oasystem",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "vercel-build": "vite build"
+    "vercel-build": "vite build",
+    "server": "nodemon server/index.js",
+    "start": "node server/index.js"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^6.5.1",
     "axios": "^1.6.2",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.11.5",
+    "pinia": "^2.2.8",
+    "sequelize": "^6.37.5",
     "vue": "^3.3.11",
-    "vue-router": "^4.2.5",
-    "@fortawesome/fontawesome-free": "^6.5.1"
+    "vue-router": "^4.2.5"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.5.2",
+    "nodemon": "^3.1.7",
     "vite": "^5.0.10"
   }
 }

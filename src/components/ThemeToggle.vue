@@ -1,30 +1,23 @@
 <template>
-  <button class="theme-toggle" @click="toggleTheme" :title="isDark ? '切換至淺色模式' : '切換至深色模式'">
-    <i class="fas" :class="isDark ? 'fa-moon' : 'fa-sun'"></i>
+  <button class="theme-toggle" @click="themeStore.toggleTheme" :title="themeStore.isDark ? '切換至淺色模式' : '切換至深色模式'">
+    <i class="fas" :class="themeStore.isDark ? 'fa-moon' : 'fa-sun'"></i>
   </button>
 </template>
 
 <script>
+import { useThemeStore } from '@/stores/theme'
+
 export default {
-  data() {
-    return {
-      isDark: false
-    }
+  setup() {
+    const themeStore = useThemeStore()
+    return { themeStore }
   },
   created() {
-    // 檢查本地存儲的主題設置
-    const theme = localStorage.getItem('theme')
-    this.isDark = theme === 'dark'
-    this.applyTheme()
+    this.themeStore.initTheme()
   },
   methods: {
     toggleTheme() {
-      this.isDark = !this.isDark
-      localStorage.setItem('theme', this.isDark ? 'dark' : 'light')
-      this.applyTheme()
-    },
-    applyTheme() {
-      document.documentElement.setAttribute('data-theme', this.isDark ? 'dark' : 'light')
+      this.themeStore.toggleTheme()
     }
   }
 }

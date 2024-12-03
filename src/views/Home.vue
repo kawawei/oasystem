@@ -36,12 +36,41 @@
         </div>
       </div>
     </div>
+
+    <!-- 添加右上角按鈕組 -->
+    <div class="top-right-buttons">
+      <button class="theme-switcher" @click="toggleTheme" :aria-label="isDark ? '切換到亮色主題' : '切換到深色主題'">
+        <svg class="sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2"></path>
+          <path d="M12 20v2"></path>
+          <path d="M4.93 4.93l1.41 1.41"></path>
+          <path d="M17.66 17.66l1.41 1.41"></path>
+          <path d="M2 12h2"></path>
+          <path d="M20 12h2"></path>
+          <path d="M6.34 17.66l-1.41 1.41"></path>
+          <path d="M19.07 4.93l-1.41 1.41"></path>
+        </svg>
+        <svg class="moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        </svg>
+      </button>
+      <button class="theme-switcher">
+        <svg class="grid-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+          <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+          <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+          <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+        </svg>
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, watch } from 'vue'
 
+const isDark = ref(false)
 const searchText = ref('')
 const isSearching = ref(false)
 
@@ -62,6 +91,11 @@ const startSearch = () => {
 const clearSearch = () => {
   searchText.value = ''
   isSearching.value = false
+}
+
+const toggleTheme = () => {
+  document.body.classList.toggle('dark')
+  isDark.value = !isDark.value
 }
 </script>
 
@@ -234,5 +268,93 @@ body.dark .result-desc {
 :root {
   --input-bg: rgba(255, 255, 255, 0.9);
   --dark-input-bg: rgba(17, 24, 39, 0.8);
+}
+
+/* 添加右上角按鈕樣式 */
+.top-right-buttons {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 12px;
+  z-index: 20; /* 確保按鈕在最上層 */
+}
+
+.theme-switcher {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background-color: var(--input-bg);
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s ease;
+  box-shadow: 
+    0 12px 36px rgba(0, 0, 0, 0.25),
+    0 8px 24px rgba(0, 0, 0, 0.2),
+    0 4px 12px rgba(0, 0, 0, 0.15);
+  color: var(--text-primary);
+}
+
+.theme-switcher:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.3),
+    0 12px 36px rgba(0, 0, 0, 0.25),
+    0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.sun, 
+.moon,
+.grid-icon {
+  width: 28px;
+  height: 28px;
+  fill: currentColor;
+}
+
+.sun {
+  color: #d69e2e;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.moon {
+  display: none;
+  color: #e2e8f0;
+  fill: currentColor;
+}
+
+/* 深色模式下的按鈕樣式 */
+body.dark .theme-switcher {
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  box-shadow: 
+    0 12px 36px rgba(0, 0, 0, 0.5),
+    0 8px 24px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+body.dark .sun {
+  display: none;
+}
+
+body.dark .moon {
+  display: block;
+  color: #ffffff;
+}
+
+body.dark .grid-icon {
+  color: #ffffff;
+}
+
+.grid-icon {
+  color: var(--text-secondary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 </style>

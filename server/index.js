@@ -15,7 +15,7 @@ async function startServer() {
     console.log('Database synced successfully')
 
     // 啟動服務器
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`)
       console.log('Environment:', process.env.NODE_ENV)
       console.log('Database config:', {
@@ -23,6 +23,11 @@ async function startServer() {
         port: process.env.DB_PORT,
         database: process.env.DB_NAME
       })
+    })
+
+    // 錯誤處理
+    server.on('error', (error) => {
+      console.error('Server error:', error)
     })
   } catch (error) {
     console.error('Unable to start server:', error)

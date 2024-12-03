@@ -55,7 +55,7 @@
           <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
         </svg>
       </button>
-      <button class="theme-switcher">
+      <button class="theme-switcher" @click="toggleAppPanel">
         <svg class="grid-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <rect x="3" y="3" width="7" height="7" rx="1"></rect>
           <rect x="14" y="3" width="7" height="7" rx="1"></rect>
@@ -63,6 +63,18 @@
           <rect x="3" y="14" width="7" height="7" rx="1"></rect>
         </svg>
       </button>
+    </div>
+
+    <!-- 應用選擇面板 -->
+    <div class="app-panel" v-if="showAppPanel" @click.self="toggleAppPanel">
+      <div class="app-grid">
+        <button class="app-item" v-for="app in apps" :key="app.id">
+          <div class="app-icon" :style="{ backgroundColor: app.color }">
+            <i :class="app.icon"></i>
+          </div>
+          <span class="app-name">{{ app.name }}</span>
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -73,6 +85,7 @@ import { ref, watch } from 'vue'
 const isDark = ref(false)
 const searchText = ref('')
 const isSearching = ref(false)
+const showAppPanel = ref(false)
 
 // 監聽搜索文字的變化
 watch(searchText, (newValue) => {
@@ -97,6 +110,37 @@ const toggleTheme = () => {
   document.body.classList.toggle('dark')
   isDark.value = !isDark.value
 }
+
+const toggleAppPanel = () => {
+  showAppPanel.value = !showAppPanel.value
+}
+
+const apps = [
+  { 
+    id: 1, 
+    name: 'OA 系統', 
+    icon: 'fas fa-briefcase', 
+    color: 'linear-gradient(135deg, #1E3A8A 0%, #1E40AF 100%)' // 深藍色
+  },
+  { 
+    id: 2, 
+    name: '筆記系統', 
+    icon: 'fas fa-sticky-note', 
+    color: 'linear-gradient(135deg, #92400E 0%, #B45309 100%)' // 深橙色
+  },
+  { 
+    id: 3, 
+    name: '設置', 
+    icon: 'fas fa-cog', 
+    color: 'linear-gradient(135deg, #374151 0%, #4B5563 100%)' // 深灰色
+  },
+  { 
+    id: 4, 
+    name: '添加應用', 
+    icon: 'fas fa-plus', 
+    color: 'linear-gradient(135deg, #065F46 0%, #047857 100%)' // 深綠色
+  }
+]
 </script>
 
 <style scoped>
@@ -105,7 +149,13 @@ const toggleTheme = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-color);
+  background: 
+    radial-gradient(circle at 0% 0%, rgba(0, 113, 227, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(0, 113, 227, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 100% 0%, rgba(130, 200, 255, 0.12) 0%, transparent 45%),
+    radial-gradient(circle at 0% 100%, rgba(130, 200, 255, 0.12) 0%, transparent 45%),
+    linear-gradient(135deg, rgba(0, 113, 227, 0.08) 0%, transparent 100%),
+    var(--bg-color);
 }
 
 .search-container {
@@ -277,7 +327,7 @@ body.dark .result-desc {
   right: 20px;
   display: flex;
   gap: 12px;
-  z-index: 20; /* 確保按鈕在最上層 */
+  z-index: 30; /* 確保按鈕始終在最上層 */
 }
 
 .theme-switcher {
@@ -356,5 +406,158 @@ body.dark .grid-icon {
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+/* 深色模式下的背景 */
+body.dark .home {
+  background: 
+    radial-gradient(circle at 0% 0%, rgba(0, 113, 227, 0.25) 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(0, 113, 227, 0.25) 0%, transparent 50%),
+    radial-gradient(circle at 100% 0%, rgba(130, 200, 255, 0.2) 0%, transparent 45%),
+    radial-gradient(circle at 0% 100%, rgba(130, 200, 255, 0.2) 0%, transparent 45%),
+    linear-gradient(135deg, rgba(0, 113, 227, 0.15) 0%, transparent 100%),
+    var(--bg-color);
+}
+
+/* 應用選擇面板樣式 */
+.app-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(20px);
+  z-index: 25; /* 確保在按鈕下方，但在其他內容上方 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-grid {
+  display: flex;
+  gap: 24px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.2),
+    0 8px 24px rgba(0, 0, 0, 0.1),
+    inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  max-width: none;
+  width: auto;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transform: translateY(0);
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 添加上滑動畫 */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.app-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 100px;
+}
+
+.app-item:hover {
+  transform: translateY(-2px) scale(1.05);
+}
+
+.app-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  font-size: 24px;
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.app-icon::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: inherit;
+  opacity: 0.9;
+  transition: opacity 0.3s ease;
+}
+
+.app-icon:hover::before {
+  opacity: 1;
+}
+
+.app-icon i {
+  position: relative;
+  z-index: 1;
+  color: #1A202C;
+  filter: none;
+}
+
+.app-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 深色模式適配 */
+body.dark .app-grid {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.3),
+    0 8px 24px rgba(0, 0, 0, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+body.dark .app-name {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* 深色模式下的陰影調整 */
+body.dark .app-icon {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark .app-icon i {
+  color: #FFFFFF;
 }
 </style>

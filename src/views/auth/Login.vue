@@ -69,7 +69,7 @@ export default {
         const response = await authService.login(this.username, this.password)
         this.userStore.setUser(response.user)
         this.userStore.setToken(response.token)
-        this.$router.push('/dashboard')
+        this.$router.push('/oa/dashboard')
       } catch (error) {
         alert(error.response?.data?.message || '用戶名或密碼錯誤')
       }
@@ -81,7 +81,7 @@ export default {
         const response = await authService.googleLogin(token)
         this.userStore.setUser(response.user)
         this.userStore.setToken(response.token)
-        this.$router.push('/dashboard')
+        this.$router.push('/oa/dashboard')
       } catch (error) {
         alert(error.response?.data?.message || 'Google 登入失敗')
       }

@@ -3,6 +3,16 @@ import MainLayout from '@/layouts/MainLayout.vue'
 
 const routes = [
   {
+    path: '/',
+    redirect: '/home'
+  },
+  {
+    path: '/home',
+    name: 'Home',
+    component: () => import('../views/Home.vue'),
+    meta: { public: true }
+  },
+  {
     path: '/login',
     name: 'Login',
     component: () => import('../views/auth/Login.vue'),
@@ -15,13 +25,13 @@ const routes = [
     meta: { public: true }
   },
   {
-    path: '/',
+    path: '/oa',
     component: MainLayout,
     meta: { requiresAuth: true },
     children: [
       {
         path: '',
-        redirect: '/dashboard'
+        redirect: '/oa/dashboard'
       },
       {
         path: 'dashboard',
@@ -75,8 +85,8 @@ router.beforeEach((to, from, next) => {
 
   if (requiresAuth && !isAuthenticated) {
     next('/login')
-  } else if (isAuthenticated && isPublic) {
-    next('/')
+  } else if (isAuthenticated && isPublic && to.path !== '/home') {
+    next('/oa/dashboard')
   } else {
     next()
   }

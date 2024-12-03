@@ -96,7 +96,7 @@ export default {
         const response = await authService.register(userData)
         this.userStore.setUser(response.user)
         this.userStore.setToken(response.token)
-        this.$router.push('/dashboard')
+        this.$router.push('/oa/dashboard')
       } catch (error) {
         alert(error.response?.data?.message || '用戶名已存在')
       }
@@ -107,7 +107,7 @@ export default {
         const response = await authService.googleLogin(token)
         this.userStore.setUser(response.user)
         this.userStore.setToken(response.token)
-        this.$router.push('/dashboard')
+        this.$router.push('/oa/dashboard')
       } catch (error) {
         alert(error.response?.data?.message || 'Google 註冊失敗')
       }

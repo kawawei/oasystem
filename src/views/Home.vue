@@ -29,10 +29,34 @@
 
     <!-- 結果面板 -->
     <div class="results-panel" v-if="isSearching">
-      <div class="results-content">
-        <div class="result-item" v-for="i in 5" :key="i">
-          <div class="result-title">搜索結果 {{i}}</div>
-          <div class="result-desc">這是一個示例搜索結果的描述文字...</div>
+      <div class="results-content custom-scrollbar">
+        <!-- 載入中狀態 -->
+        <div v-if="isLoading" class="loading-state">
+          <div class="spinner"></div>
+          <span>搜尋中...</span>
+        </div>
+        
+        <!-- 無結果狀態 -->
+        <div v-else-if="searchResults.length === 0" class="no-results">
+          <span>未找到相關結果</span>
+        </div>
+        
+        <!-- 搜尋結果列表 -->
+        <div v-else>
+          <div class="results-stats">找到 {{ searchResults.length }} 個結果</div>
+          <div 
+            v-for="result in searchResults" 
+            :key="result.id" 
+            class="result-item"
+            @click="openUrl(result.url)"
+          >
+            <div class="result-icon">{{ result.icon }}</div>
+            <div class="result-content">
+              <div class="result-title">{{ result.title }}</div>
+              <div class="result-url">{{ result.url }}</div>
+              <div class="result-desc">{{ result.description }}</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -63,6 +87,9 @@
           <rect x="3" y="14" width="7" height="7" rx="1"></rect>
         </svg>
       </button>
+      <button class="theme-switcher" @click="showSettings = !showSettings">
+        <i class="fas fa-cog"></i>
+      </button>
     </div>
 
     <!-- 應用選擇面板 -->
@@ -76,16 +103,122 @@
         </button>
       </div>
     </div>
+
+    <!-- 添加網站按鈕 -->
+    <button class="add-site-button" @click="showAddSite = true">
+      <span>添加網站</span>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M12 5v14M5 12h14" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+
+    <!-- 添加網站彈窗 -->
+    <div v-if="showAddSite" class="modal-overlay" @click="showAddSite = false">
+      <div class="modal-content" @click.stop>
+        <h2>添加新網站到搜尋引擎</h2>
+        <div class="input-group">
+          <input 
+            type="text" 
+            v-model="newUrl"
+            placeholder="輸入網站網址 (例如: https://example.com)"
+            @keyup.enter="addNewUrl"
+          >
+          <button @click="addNewUrl" :disabled="!newUrl">添加</button>
+        </div>
+        <p class="hint">提示：請輸入完整的網址，包含 http:// 或 https://</p>
+      </div>
+    </div>
+
+    <!-- 添加個人設置面板 -->
+    <div class="settings-panel" v-if="showSettings">
+      <h3>個人設置</h3>
+      <div class="settings-item">
+        <label>搜尋語言</label>
+        <select v-model="userPreferences.language">
+          <option value="zh">中文</option>
+          <option value="en">English</option>
+          <option value="all">All</option>
+        </select>
+      </div>
+      <div class="settings-item">
+        <label>每頁結果數</label>
+        <input type="number" v-model="userPreferences.resultsPerPage">
+      </div>
+      <!-- 添加搜尋歷史 -->
+      <div class="search-history">
+        <h4>最近搜尋</h4>
+        <div v-for="item in searchHistory" :key="item">
+          {{ item }}
+        </div>
+      </div>
+      <!-- 在設置面板中添加地區選擇 -->
+      <div class="settings-item">
+        <label>優先顯示地區</label>
+        <select v-model="userPreferences.region">
+          <option value="tw">台灣</option>
+          <option value="cn">中國</option>
+          <option value="global">全球</option>
+        </select>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import axios from 'axios'
+
+const router = useRouter()
 
 const isDark = ref(false)
 const searchText = ref('')
 const isSearching = ref(false)
 const showAppPanel = ref(false)
+const searchResults = ref([])
+const isLoading = ref(false)
+const showSettings = ref(false)
+const userPreferences = ref({
+    language: 'zh',
+    resultsPerPage: 20,
+    region: 'tw'  // 默認台灣
+})
+
+// 添加搜尋果的介面定義
+const searchItems = ref([
+  {
+    id: 1,
+    title: '工作任務管理',
+    description: '查看和管理所有工作任務',
+    icon: '📋',
+    link: '/tasks',
+    keywords: ['任務', '工作', '待辦', 'todo']
+  },
+  {
+    id: 2,
+    title: '會議記錄',
+    description: '歷史會議記錄和筆記',
+    icon: '📝',
+    link: '/meetings',
+    keywords: ['會議', '記錄', '筆記', '歷史']
+  },
+  {
+    id: 3,
+    title: '專案文檔',
+    description: '專案相關的所有文檔',
+    icon: '📁',
+    link: '/documents',
+    keywords: ['文檔', '文件', '專案', '項目']
+  },
+  {
+    id: 4,
+    title: '個人設置',
+    description: '修改個人信息和偏好設置',
+    icon: '⚙️',
+    link: '/settings',
+    keywords: ['設置', '配置', '個人', '偏好']
+  }
+])
 
 // 監聽搜索文字的變化
 watch(searchText, (newValue) => {
@@ -95,10 +228,52 @@ watch(searchText, (newValue) => {
   }
 })
 
-const startSearch = () => {
-  if (searchText.value.trim()) {
-    isSearching.value = true
+// 修改搜尋功能
+const startSearch = async () => {
+  if (!searchText.value.trim()) return
+  
+  isSearching.value = true
+  isLoading.value = true
+  searchResults.value = []
+  
+  try {
+    console.log("發送搜尋請求:", searchText.value)
+    const response = await axios.post('http://localhost:8000/api/search', {
+      query: searchText.value,
+      preferences: userPreferences.value
+    })
+    
+    console.log("收到搜尋結果:", response.data)
+    searchResults.value = response.data.results.map(result => ({
+      id: result.url,
+      title: result.title,
+      url: result.url,
+      description: result.description,
+      icon: '🌐'
+    }))
+    console.log("處理後的結果:", searchResults.value)
+    
+  } catch (error) {
+    console.error('搜尋出錯:', error)
+    searchResults.value = [{
+      id: 'error',
+      title: '搜尋出錯',
+      description: error.response?.data?.detail || '請稍後再試',
+      icon: '⚠️',
+      url: '#'
+    }]
+  } finally {
+    isLoading.value = false
   }
+}
+
+// 根據類型返回對應圖標
+const getIconByType = (type) => {
+  const icons = {
+    task: '📋',
+    default: '🔍'
+  }
+  return icons[type] || icons.default
 }
 
 const clearSearch = () => {
@@ -141,6 +316,84 @@ const apps = [
     color: 'linear-gradient(135deg, #065F46 0%, #047857 100%)' // 深綠色
   }
 ]
+
+// 添加導航功能
+const navigateToResult = (result) => {
+  router.push(result.link)
+}
+
+// 添加搜尋歷史功能
+const searchHistory = ref([])
+const MAX_HISTORY_ITEMS = 5
+
+const addToSearchHistory = (query) => {
+  if (!query.trim()) return
+  
+  // 移除重複項
+  searchHistory.value = searchHistory.value.filter(item => item !== query)
+  
+  // 添加到開頭
+  searchHistory.value.unshift(query)
+  
+  // 限制歷史記錄數量
+  if (searchHistory.value.length > MAX_HISTORY_ITEMS) {
+    searchHistory.value = searchHistory.value.slice(0, MAX_HISTORY_ITEMS)
+  }
+  
+  // 保存到 localStorage
+  localStorage.setItem('searchHistory', JSON.stringify(searchHistory.value))
+}
+
+// 在組件掛載時載入搜尋歷史
+const loadSearchHistory = () => {
+  const history = localStorage.getItem('searchHistory')
+  if (history) {
+    searchHistory.value = JSON.parse(history)
+  }
+}
+
+// 在搜尋時保存歷史
+const handleSearch = async () => {
+  await startSearch()
+  addToSearchHistory(searchText.value)
+}
+
+// 修改點擊處理函數
+const openUrl = (url) => {
+  window.open(url, '_blank')  // 在新標籤頁打開URL
+}
+
+const showAddSite = ref(false)
+const newUrl = ref('')
+
+const addNewUrl = async () => {
+  if (!newUrl.value) return
+  
+  try {
+    const response = await axios.post('http://localhost:8000/api/add-url', {
+      url: newUrl.value
+    })
+    
+    if (response.data.status === 'success') {
+      alert('網站已成功添加到搜尋引擎！')
+      newUrl.value = ''
+      showAddSite.value = false
+    }
+  } catch (error) {
+    console.error('添加網站失敗:', error)
+    alert('添加失敗，請確認URL格式正確')
+  }
+}
+
+// 在搜尋結果中顯示地區標記
+const getRegionLabel = (region) => {
+    const labels = {
+        'tw': '🇹🇼',
+        'cn': '🇨🇳',
+        'global': '🌐'
+    }
+    return labels[region] || '🌐'
+}
 </script>
 
 <style scoped>
@@ -204,7 +457,7 @@ const apps = [
   color: var(--text-secondary);
 }
 
-/* 搜索框樣式 */
+/* 搜框樣式 */
 .search-box {
   position: relative;
   width: 100%;
@@ -217,12 +470,23 @@ const apps = [
   top: 0;
   width: 260px;
   padding: 20px;
+  padding-right: 12px;
   z-index: 10;
+}
+
+.search-box.searching .search-input {
+  width: calc(100% - 8px);
+  margin-right: 8px;
+}
+
+.search-box.searching .clear-button {
+  right: 20px;
 }
 
 .search-input {
   width: 100%;
   padding: 0 16px;
+  padding-right: 48px;
   height: 48px;
   border: none;
   border-radius: 24px;
@@ -234,7 +498,6 @@ const apps = [
     0 8px 24px rgba(0, 0, 0, 0.15),
     0 4px 12px rgba(0, 0, 0, 0.12);
   backdrop-filter: blur(10px);
-  padding-right: 30px;
   line-height: 48px;
   vertical-align: middle;
 }
@@ -248,7 +511,7 @@ const apps = [
 /* 清除按鈕樣式 */
 .clear-button {
   position: absolute;
-  right: -8px;
+  right: 8px;
   top: 50%;
   transform: translateY(-50%);
   width: 32px;
@@ -279,10 +542,11 @@ const apps = [
   position: fixed;
   left: 0;
   top: 0;
-  width: 320px;
+  width: 360px;  /* 增加寬度 */
   height: 100vh;
   padding: 90px 20px 20px;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
   z-index: 5;
   overflow: hidden;
 }
@@ -290,31 +554,69 @@ const apps = [
 .results-content {
   height: 100%;
   overflow-y: auto;
+  padding-right: 10px;
+}
+
+.results-stats {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(0, 113, 227, 0.1);
 }
 
 .result-item {
   padding: 16px;
-  margin-bottom: 8px;
-  background: rgba(255, 255, 255, 0.3);
+  margin-bottom: 12px;
+  background: rgba(255, 255, 255, 0.5);
   backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
   border-radius: 12px;
   box-shadow: 
-    0 4px 12px rgba(0, 0, 0, 0.1),
-    0 2px 4px rgba(0, 0, 0, 0.08);
+    0 4px 12px rgba(0, 0, 0, 0.05),
+    0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.result-item:hover {
+  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 
+    0 6px 16px rgba(0, 0, 0, 0.08),
+    0 3px 6px rgba(0, 0, 0, 0.08);
 }
 
 .result-title {
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 500;
   color: var(--text-primary);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+}
+
+.result-url {
+  font-size: 0.8rem;
+  color: #0066cc;
+  margin-bottom: 8px;
+  opacity: 0.8;
 }
 
 .result-desc {
   font-size: 0.9rem;
   color: var(--text-secondary);
-  opacity: 0.8;
+  line-height: 1.5;
+}
+
+/* 深色模式適配 */
+body.dark .result-item {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+body.dark .result-item:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+body.dark .results-stats {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
 }
 
 /* 深色模式樣式 */
@@ -588,5 +890,270 @@ body.dark .app-icon i {
 /* 深色模式變量 */
 body.dark {
   --bg-color: #1a202c;
+}
+
+/* 添加新的樣式 */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  color: var(--text-secondary);
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(0, 113, 227, 0.3);
+  border-radius: 50%;
+  border-top-color: #0071e3;
+  animation: spin 1s linear infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.no-results {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-secondary);
+}
+
+.result-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.result-item:hover {
+  transform: translateX(4px);
+}
+
+.result-icon {
+  font-size: 24px;
+  min-width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 113, 227, 0.1);
+  border-radius: 8px;
+}
+
+.result-content {
+  flex: 1;
+}
+
+/* 深色模式適配 */
+body.dark .result-icon {
+  background: rgba(0, 113, 227, 0.2);
+}
+
+.result-url {
+  font-size: 0.8rem;
+  color: #0066cc;
+  margin-bottom: 4px;
+  word-break: break-all;
+}
+
+.result-item {
+  cursor: pointer;
+}
+
+.result-item:hover {
+  background: rgba(0, 113, 227, 0.1);
+}
+
+/* 自定義滾動條 */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 113, 227, 0.5) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 113, 227, 0.5);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 113, 227, 0.7);
+}
+
+.add-site-button {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 24px;
+  background: #0071e3;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);
+  transition: all 0.3s ease;
+}
+
+.add-site-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 113, 227, 0.4);
+}
+
+.add-site-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-content {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content h2 {
+  margin: 0 0 16px;
+  color: var(--text-primary);
+}
+
+.input-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.input-group input {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.input-group button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  background: #0071e3;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.input-group button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.hint {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+}
+
+/* 深色模式適配 */
+body.dark .modal-content {
+  background: #1a202c;
+}
+
+body.dark .input-group input {
+  background: #2d3748;
+  border-color: #4a5568;
+  color: white;
+}
+
+body.dark .hint {
+  color: #a0aec0;
+}
+
+/* 個人設置面板樣式 */
+.settings-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(20px);
+  z-index: 25; /* 確保在按鈕下方，但在其他內容上方 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.settings-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.settings-item label {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.settings-item select,
+.settings-item input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.search-history {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.search-history h4 {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.search-history div {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
 }
 </style>

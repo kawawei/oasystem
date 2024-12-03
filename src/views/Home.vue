@@ -154,8 +154,16 @@ const apps = [
     radial-gradient(circle at 100% 100%, rgba(0, 113, 227, 0.15) 0%, transparent 50%),
     radial-gradient(circle at 100% 0%, rgba(130, 200, 255, 0.12) 0%, transparent 45%),
     radial-gradient(circle at 0% 100%, rgba(130, 200, 255, 0.12) 0%, transparent 45%),
-    linear-gradient(135deg, rgba(0, 113, 227, 0.08) 0%, transparent 100%),
-    var(--bg-color);
+    linear-gradient(135deg, rgba(0, 113, 227, 0.08) 0%, transparent 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 0;
 }
 
 .search-container {
@@ -207,7 +215,7 @@ const apps = [
   position: fixed;
   left: 0;
   top: 0;
-  width: 420px;
+  width: 260px;
   padding: 20px;
   z-index: 10;
 }
@@ -226,13 +234,21 @@ const apps = [
     0 8px 24px rgba(0, 0, 0, 0.15),
     0 4px 12px rgba(0, 0, 0, 0.12);
   backdrop-filter: blur(10px);
-  padding-right: 50px;
+  padding-right: 30px;
+  line-height: 48px;
+  vertical-align: middle;
+}
+
+.search-input::placeholder {
+  line-height: 48px;
+  vertical-align: middle;
+  color: var(--text-secondary);
 }
 
 /* 清除按鈕樣式 */
 .clear-button {
   position: absolute;
-  right: 25px;
+  right: -8px;
   top: 50%;
   transform: translateY(-50%);
   width: 32px;
@@ -263,7 +279,7 @@ const apps = [
   position: fixed;
   left: 0;
   top: 0;
-  width: 420px;
+  width: 320px;
   height: 100vh;
   padding: 90px 20px 20px;
   background: transparent;
@@ -278,10 +294,14 @@ const apps = [
 
 .result-item {
   padding: 16px;
-  margin-bottom: 1px;
-  background: rgba(255, 255, 255, 0.1);
+  margin-bottom: 8px;
+  background: rgba(255, 255, 255, 0.3);
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
+  border-radius: 12px;
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 .result-title {
@@ -304,7 +324,10 @@ body.dark .search-input {
 }
 
 body.dark .result-item {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 body.dark .result-title {
@@ -318,6 +341,7 @@ body.dark .result-desc {
 :root {
   --input-bg: rgba(255, 255, 255, 0.9);
   --dark-input-bg: rgba(17, 24, 39, 0.8);
+  --bg-color: #ffffff;
 }
 
 /* 添加右上角按鈕樣式 */
@@ -559,5 +583,10 @@ body.dark .app-icon {
 
 body.dark .app-icon i {
   color: #FFFFFF;
+}
+
+/* 深色模式變量 */
+body.dark {
+  --bg-color: #1a202c;
 }
 </style>

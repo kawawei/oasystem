@@ -5,6 +5,9 @@
         <h1>OA System</h1>
         <p class="subtitle">企業辦公系統</p>
       </div>
+      <div v-if="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
       <form @submit.prevent="handleLogin">
         <div class="input-group">
           <div class="input-icon">
@@ -59,6 +62,8 @@
 </template>
 
 <script>
+import { authApi } from '../api/auth';
+
 export default {
   name: 'Login',
   data() {
@@ -67,28 +72,36 @@ export default {
       password: '',
       rememberMe: false,
       showPassword: false,
-      isLoading: false
+      isLoading: false,
+      errorMessage: ''
     }
   },
   methods: {
     async handleLogin() {
       if (!this.username || !this.password) {
-        return
+        this.errorMessage = '請輸入用戶名和密碼';
+        return;
       }
       
-      this.isLoading = true
+      this.isLoading = true;
+      this.errorMessage = '';
+      
       try {
-        console.log('登入資訊：', {
-          username: this.username,
-          password: this.password,
-          rememberMe: this.rememberMe
-        })
-        // 這裡添加實際的登入邏輯
-        await new Promise(resolve => setTimeout(resolve, 1000)) // 模擬API請求
+        const response = await authApi.login(this.username, this.password);
+        
+        // 保存 token 到 localStorage
+        localStorage.setItem('token', response.token);
+        
+        // 保存用戶信息
+        localStorage.setItem('user', JSON.stringify(response.user));
+        
+        // 跳轉到儀表板
+        this.$router.push('/dashboard');
       } catch (error) {
-        console.error('登入失敗：', error)
+        console.error('登入失敗:', error);
+        this.errorMessage = error.response?.data?.message || '登入失敗，請稍後重試';
       } finally {
-        this.isLoading = false
+        this.isLoading = false;
       }
     },
     togglePassword() {
@@ -280,6 +293,15 @@ button:disabled {
     margin: 1rem;
     padding: 2rem 1.5rem;
   }
+}
+
+.error-message {
+  color: #ff3b30;
+  text-align: center;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background-color: rgba(255, 59, 48, 0.1);
+  border-radius: 8px;
 }
 </style>
   

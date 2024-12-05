@@ -5,6 +5,9 @@
         <h1>OA System</h1>
         <p class="subtitle">註冊新帳號</p>
       </div>
+      <div v-if="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
       <form @submit.prevent="handleRegister">
         <div class="input-group">
           <div class="input-icon">
@@ -70,6 +73,8 @@
 </template>
 
 <script>
+import { authApi } from '../api/auth';
+
 export default {
   name: 'Register',
   data() {
@@ -79,41 +84,56 @@ export default {
       password: '',
       confirmPassword: '',
       showPassword: false,
-      isLoading: false
+      isLoading: false,
+      errorMessage: ''
     }
   },
   methods: {
     async handleRegister() {
+      // 基本驗證
       if (!this.username || !this.email || !this.password || !this.confirmPassword) {
-        return
+        this.errorMessage = '請填寫所有欄位';
+        return;
       }
 
       if (this.password !== this.confirmPassword) {
-        alert('兩次輸入的密碼不一致')
-        return
+        this.errorMessage = '兩次輸入的密碼不一致';
+        return;
       }
+
+      if (this.password.length < 6) {
+        this.errorMessage = '密碼長度至少需要6個字符';
+        return;
+      }
+
+      this.isLoading = true;
+      this.errorMessage = '';
       
-      this.isLoading = true
       try {
-        console.log('註冊資訊：', {
-          username: this.username,
-          email: this.email,
-          password: this.password
-        })
-        // 這裡添加實際的註冊邏輯
-        await new Promise(resolve => setTimeout(resolve, 1000)) // 模擬API請求
-        this.$router.push('/login')
+        const response = await authApi.register(
+          this.username,
+          this.email,
+          this.password
+        );
+        
+        // 註冊成功後自動登入
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('user', JSON.stringify(response.user));
+        
+        // 跳轉到儀表板
+        this.$router.push('/dashboard');
       } catch (error) {
-        console.error('註冊失敗：', error)
+        console.error('註冊失敗:', error);
+        this.errorMessage = error.response?.data?.message || '註冊失敗，請稍後重試';
       } finally {
-        this.isLoading = false
+        this.isLoading = false;
       }
     },
     togglePassword() {
-      this.showPassword = !this.showPassword
+      this.showPassword = !this.showPassword;
     },
     goToLogin() {
-      this.$router.push('/login')
+      this.$router.push('/login');
     }
   }
 }
@@ -241,6 +261,15 @@ button:disabled {
   to {
     transform: rotate(360deg);
   }
+}
+
+.error-message {
+  color: #ff3b30;
+  text-align: center;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background-color: rgba(255, 59, 48, 0.1);
+  border-radius: 8px;
 }
 
 .footer-text {

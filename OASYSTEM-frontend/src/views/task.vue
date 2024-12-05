@@ -92,7 +92,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { taskAPI } from '../api/tasks'
 
 // 狀態按鈕配置
 const statusButtons = [
@@ -116,24 +117,23 @@ const statusButtons = [
 // 響應式數據
 const searchQuery = ref('')
 const statusFilter = ref('')
-const tasks = ref([
-  {
-    id: 1,
-    title: '完成首頁設計',
-    status: 'in_progress',
-    priority: '高',
-    deadline: '2024-12-10',
-    assignee: '張三'
-  },
-  {
-    id: 2,
-    title: '實現用戶認證',
-    status: 'pending',
-    priority: '中',
-    deadline: '2024-12-15',
-    assignee: '李四'
+const tasks = ref([])
+
+// 在組件掛載時獲取任務數據
+onMounted(async () => {
+  await loadTasks()
+})
+
+// 加載任務數據
+const loadTasks = async () => {
+  try {
+    const response = await taskAPI.getAllTasks()
+    tasks.value = response
+  } catch (error) {
+    console.error('獲取任務失敗:', error)
+    // 這裡可以添加錯誤提示
   }
-])
+}
 
 // 計算屬性：過濾後的任務列表
 const filteredTasks = computed(() => {
@@ -146,23 +146,48 @@ const filteredTasks = computed(() => {
 
 // 方法
 const handleSearch = () => {
-  // 實現搜索邏輯
+  // 搜索已通過 computed 屬性實現
 }
 
 const handleStatusChange = (status) => {
   statusFilter.value = statusFilter.value === status ? '' : status
 }
 
-const handleCreateTask = () => {
-  // 實現創任務邏輯
+const handleCreateTask = async () => {
+  try {
+    const newTask = {
+      title: '新任務',  // 這裡可以改為彈出對話框輸入
+      description: '新任務描述',
+      priority: 'medium',
+      dueDate: new Date().toISOString()
+    }
+    await taskAPI.createTask(newTask)
+    await loadTasks()  // 重新加載任務列表
+  } catch (error) {
+    console.error('創建任務失敗:', error)
+  }
 }
 
-const handleEdit = (task) => {
-  // 實現編輯任務邏輯
+const handleEdit = async (task) => {
+  try {
+    const updatedTask = {
+      ...task,
+      // 這裡可以添加編輯邏輯
+    }
+    await taskAPI.updateTask(task.id, updatedTask)
+    await loadTasks()
+  } catch (error) {
+    console.error('更新任務失敗:', error)
+  }
 }
 
-const handleDelete = (task) => {
-  // 實現刪除任務邏輯
+const handleDelete = async (task) => {
+  try {
+    await taskAPI.deleteTask(task.id)
+    await loadTasks()
+  } catch (error) {
+    console.error('刪除任務失敗:', error)
+  }
 }
 
 // 輔助方法
@@ -184,7 +209,6 @@ const getPriorityType = (priority) => {
   return priority.toLowerCase()
 }
 
-// 獲取每個狀態的任務數量
 const getTaskCount = (status) => {
   return tasks.value.filter(task => task.status === status).length
 }

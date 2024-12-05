@@ -10,10 +10,14 @@
         <i :class="['fas', sidebarVisible ? 'fa-chevron-left' : 'fa-chevron-right']"></i>
       </button>
       <nav class="nav-menu">
-        <a href="#" class="nav-item active">
-          <i class="fas fa-tasks"></i>
+        <router-link to="/dashboard" class="nav-item" :class="{ active: $route.path === '/dashboard' }">
+          <i class="fas fa-home"></i>
           <span>主頁</span>
-        </a>
+        </router-link>
+        <router-link to="/tasks" class="nav-item" :class="{ active: $route.path === '/tasks' }">
+          <i class="fas fa-tasks"></i>
+          <span>任務管理</span>
+        </router-link>
       </nav>
     </aside>
 
@@ -40,103 +44,12 @@
         </div>
       </header>
 
-      <!-- 內容區域 -->
-      <div class="content">
-        <h2 class="welcome">歡迎回來，{{ username }}</h2>
-        
-        <!-- 概覽卡片 -->
-        <div class="overview-cards">
-          <div class="card glass-light">
-            <div class="card-icon">
-              <i class="fas fa-tasks"></i>
-            </div>
-            <div class="card-info">
-              <h3>待辦事項</h3>
-              <p class="count">12</p>
-              <p class="trend up">
-                <i class="fas fa-arrow-up"></i>
-                較上週增加 2 項
-              </p>
-            </div>
-          </div>
-          
-          <div class="card glass-light">
-            <div class="card-icon success">
-              <i class="fas fa-check-circle"></i>
-            </div>
-            <div class="card-info">
-              <h3>已完成</h3>
-              <p class="count">28</p>
-              <p class="trend up">
-                <i class="fas fa-arrow-up"></i>
-                完成率 85%
-              </p>
-            </div>
-          </div>
-          
-          <div class="card glass-light">
-            <div class="card-icon warning">
-              <i class="fas fa-clock"></i>
-            </div>
-            <div class="card-info">
-              <h3>待處理</h3>
-              <p class="count">5</p>
-              <p class="trend down">
-                <i class="fas fa-arrow-down"></i>
-                較上週減少 3 項
-              </p>
-            </div>
-          </div>
-          
-          <div class="card glass-light">
-            <div class="card-icon info">
-              <i class="fas fa-envelope"></i>
-            </div>
-            <div class="card-info">
-              <h3>未讀</h3>
-              <p class="count">7</p>
-              <p class="trend neutral">
-                <i class="fas fa-minus"></i>
-                無變化
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- 最近活動 -->
-        <div class="recent-activity glass">
-          <h3>最近活動</h3>
-          <div class="activity-list">
-            <div class="activity-item glass-light">
-              <div class="activity-icon">
-                <i class="fas fa-file-alt"></i>
-              </div>
-              <div class="activity-details">
-                <p class="activity-title">更新了專案文檔</p>
-                <p class="activity-time">2 小時前</p>
-              </div>
-            </div>
-            <div class="activity-item glass-light">
-              <div class="activity-icon">
-                <i class="fas fa-tasks"></i>
-              </div>
-              <div class="activity-details">
-                <p class="activity-title">完成了 3 個任務</p>
-                <p class="activity-time">4 小時前</p>
-              </div>
-            </div>
-            <div class="activity-item glass-light">
-              <div class="activity-icon">
-                <i class="fas fa-comment"></i>
-              </div>
-              <div class="activity-details">
-                <p class="activity-title">收到新的評論</p>
-                <p class="activity-time">昨天</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- 內容區域改為使用 router-view -->
+      <router-view v-slot="{ Component }">
+        <transition name="fade" mode="out-in">
+          <component :is="Component" />
+        </transition>
+      </router-view>
     </main>
   </div>
 </template>
@@ -628,5 +541,16 @@ export default {
 .content-expanded {
   margin-left: 0;
   padding-left: 3rem;
+}
+
+/* 添加過渡效果的樣式 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

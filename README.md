@@ -1,130 +1,57 @@
-# Web應用專案
+# oasystem-frontend
 
-一個類似Google的搜尋應用，整合了OA辦公系統等工具。
+This template should help get you started developing with Vue 3 in Vite.
 
-## 技術架構
+## Recommended IDE Setup
 
-### 核心系統
-- 瀏覽器引擎
-- 擴展管理器
-- API 網關
+[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
 
-### 前端
-- Vue 3
-- Vue Router
-- Pinia
+## Customize configuration
 
-## 擴展應用
-- OA 辦公系統
-  - 任務管理
-  - 專案管理
-  - 數據分析
+See [Vite Configuration Reference](https://vite.dev/config/).
 
-## 專案結構
+## Project Setup
 
-## 部署
+```sh
+npm install
+```
 
-### 後端部署
-- 創建 Render 帳號並連接 GitHub
-- 創建 Web Service
-- 設置環境變量：
-  - DB_HOST
-  - DB_USER
-  - DB_PASSWORD
-  - DB_NAME
-  - JWT_SECRET
-  - NODE_ENV=production
+### Compile and Hot-Reload for Development
 
-## 功能特點
+```sh
+npm run dev
+```
 
-- 用戶認證系統
-- 任務管理
-- 專案管理
-  - 專案階段劃分
-  - 進度追蹤
-  - 人員分配
-- 即時通訊
-- 儀表板
-  - 數據統計
-  - 圖表分析
-  - 數據導出
-- 筆記系統（開發中）
-  - 富文本編輯
-  - Markdown 支持
-  - 筆記分享
-- 瀏覽器功能（規劃中）
-  - 書籤管理
-  - 歷史記錄
-  - 快速搜索
+### Compile and Minify for Production
 
-## 特色功能
-- 工作環境管理
-  - 場景切換
-  - 智能推薦
-  - 數據同步
-- 團隊協作
-  - 實時溝通
-  - 文件共享
-  - 進度追蹤
-- 專業工具
-  - 行業擴展
-  - 定制服務
-  - API 集成
+```sh
+npm run build
+```
 
-## 用戶定位
-- 第一階段：個人用戶
-  - 學生（論文研究、資料整理）
-  - 自由工作者（項目管理、客戶溝通）
-  - 專業人士（資訊收集、知識管理）
-- 第二階段：小型團隊
-  - 創業團隊
-  - 小型工作室
-  - 研究小組
-- 第三階段：企業用戶
-  - 中大型企業
-  - 教育機構
-  - 政府部門
+### Run Headed Component Tests with [Cypress Component Testing](https://on.cypress.io/component)
 
-## 革新功能
-- AI 智能助手
-  - 內容即時總結
-  - 智能翻譯
-  - 寫作輔助
-  - 代碼解釋
+```sh
+npm run test:unit:dev # or `npm run test:unit` for headless testing
+```
 
-- 智能工作流
-  - 一鍵整理標籤頁
-  - 智能分類書籤
-  - 自動工作空間
-  - 場景切換
+### Run End-to-End Tests with [Cypress](https://www.cypress.io/)
 
-- 知識管理
-  - 網頁永久保存
-  - 智能筆記
-  - 知識圖譜
-  - 學習追蹤
+```sh
+npm run test:e2e:dev
+```
 
-# 開發日誌
+This runs the end-to-end tests against the Vite development server.
+It is much faster than the production build.
 
-## 2024-01-09
-### 新增功能
-- 實現搜索功能基本架構
-  - 添加中央搜索框
-  - 實現搜索框移動動畫效果
-  - 添加結果面板
-  - 添加清除按鈕功能
-  - 支持深色模式
-  - 添加毛玻璃效果
+But it's still recommended to test the production build with `test:e2e` before deploying (e.g. in CI environments):
 
-### 技術細節
-- 使用 Vue 3 Composition API
-- 使用 CSS transitions 實現平滑動畫
-- 使用 CSS variables 實現主題切換
-- 使用 backdrop-filter 實現毛玻璃效果
-- 使用 watch 監聽搜索文字變化
+```sh
+npm run build
+npm run test:e2e
+```
 
-### 待優化項目
-- [ ] 搜索結果的加載動畫
-- [ ] 搜索歷史記錄功能
-- [ ] 鍵盤導航支持
-- [ ] 搜索建議功能
+### Lint with [ESLint](https://eslint.org/)
+
+```sh
+npm run lint
+```

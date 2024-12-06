@@ -1,22 +1,41 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Dashboard from '../views/Dashboard.vue'
 import Task from '../views/task.vue'
+import Setting from '../views/setting.vue'
 
 const routes = [
   {
     path: '/',
-    redirect: '/dashboard'
-  },
-  {
-    path: '/dashboard',
-    name: 'Dashboard',
     component: Dashboard,
-    meta: { requiresAuth: true },
     children: [
       {
-        path: '/tasks',
+        path: '',
+        redirect: '/dashboard'
+      },
+      {
+        path: 'dashboard',
+        name: 'Dashboard',
+        component: {
+          template: '<div></div>'
+        },
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'tasks',
         name: 'Tasks',
         component: Task,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'settings',
+        name: 'Settings',
+        component: Setting,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'team',
+        name: 'Team',
+        component: () => import('../views/team.vue'),
         meta: { requiresAuth: true }
       }
     ]
@@ -25,6 +44,12 @@ const routes = [
     path: '/login',
     name: 'Login',
     component: () => import('../views/login.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: () => import('../views/register.vue'),
     meta: { requiresAuth: false }
   }
 ]

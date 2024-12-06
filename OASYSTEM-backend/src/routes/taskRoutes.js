@@ -1,21 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
 const taskController = require('../controllers/taskController');
+const auth = require('../middleware/auth');
 
-// 獲取當前用戶的所有任務
-router.get('/', auth, taskController.getAllTasks);
+// 所有路由都需要驗證
+router.use(auth);
 
-// 獲取特定任務
-router.get('/:id', auth, taskController.getTask);
+// 獲取所有任務
+router.get('/', taskController.getAllTasks);
 
-// 創建新任務
-router.post('/', auth, taskController.createTask);
+// 創建任務
+router.post('/', taskController.createTask);
 
 // 更新任務
-router.put('/:id', auth, taskController.updateTask);
+router.put('/:id', taskController.updateTask);
 
 // 刪除任務
-router.delete('/:id', auth, taskController.deleteTask);
+router.delete('/:id', taskController.deleteTask);
 
 module.exports = router; 

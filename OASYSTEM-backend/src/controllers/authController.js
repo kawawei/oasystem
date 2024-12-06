@@ -1,6 +1,6 @@
+const { User } = require('../models');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/user');
-const bcrypt = require('bcrypt');
 
 const authController = {
   // 用戶註冊

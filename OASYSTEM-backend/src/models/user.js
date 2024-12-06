@@ -1,7 +1,12 @@
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcryptjs')
 
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define('User', {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
+    },
     username: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -11,23 +16,39 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false
     },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
     email: {
       type: DataTypes.STRING,
-      allowNull: true,
-      unique: true,
-      validate: {
-        isEmail: true
-      }
+      allowNull: false,
+      unique: true
+    },
+    role: {
+      type: DataTypes.ENUM('admin', 'user'),
+      defaultValue: 'user'
     }
-  })
+  }, {
+    tableName: 'Users',
+    timestamps: true
+  });
 
-  // 添加密碼加密鉤子
-  User.beforeCreate(async (user) => {
-    if (user.password) {
-      const salt = await bcrypt.genSalt(10)
-      user.password = await bcrypt.hash(user.password, salt)
-    }
-  })
+  User.associate = (models) => {
+    User.hasMany(models.Task, {
+      foreignKey: 'userId',
+      as: 'tasks'
+    });
+    User.belongsToMany(models.Team, {
+      through: {
+        model: models.TeamMember,
+        unique: false
+      },
+      foreignKey: 'userId',
+      otherKey: 'teamId',
+      as: 'teams'
+    });
+  };
 
-  return User
-} 
+  return User;
+}; 

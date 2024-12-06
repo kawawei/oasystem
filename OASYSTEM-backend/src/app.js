@@ -3,29 +3,23 @@ dotenv.config();
 
 const express = require('express');
 const cors = require('cors');
-const sequelize = require('./config/database');
-const User = require('./models/user');
-
-const authRoutes = require('./routes/authRoutes');
+const { sequelize } = require('./models');
 const taskRoutes = require('./routes/taskRoutes');
+const userRoutes = require('./routes/userRoutes');
+const authRoutes = require('./routes/authRoutes');
+const teamRoutes = require('./routes/teamRoutes');
 
 const app = express();
 
 // 中間件
 app.use(cors());
-app.use(express.urlencoded({ extended: true, charset: 'utf-8' }));
-app.use(express.json({ charset: 'utf-8' }));
-
-// 添加響應頭設置
-app.use((req, res, next) => {
-  res.charset = 'utf-8';
-  res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  next();
-});
+app.use(express.json());
 
 // 路由
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/teams', teamRoutes);
 
 // 錯誤處理中間件
 app.use((err, req, res, next) => {
@@ -44,33 +38,36 @@ async function startServer() {
     await sequelize.authenticate();
     console.log('Database connection has been established successfully.');
     
-    // 使用 alter 而不是 force，這樣不會刪除現有的表
-    await sequelize.sync({ alter: true });
+    // 強制重新創建表，並設置正確的刪除順序
+    await sequelize.sync({ 
+      force: true,
+      // 設置刪除順序
+      alter: {
+        drop: true
+      }
+    });
     console.log('Database synchronized');
 
-    // 檢查是否已存在測試用戶
-    let testUser = await User.findOne({ where: { username: 'admin' } });
-    
-    if (!testUser) {
-      // 創建測試用戶
-      testUser = await User.create({
-        username: 'admin',
-        email: 'admin@example.com',
-        password: 'admin123'
-      });
-      console.log('Test user created:', testUser.username);
-    } else {
-      console.log('Test user already exists:', testUser.username);
-    }
+    // 創建默認管理員用戶
+    const { User } = require('./models');
+    await User.create({
+      username: 'admin',
+      password: '$2b$10$zPiXoqwQGk.jqIAz5BI.A.8I.TPvOXzh7XoQwHVnN1kA1jZqYq1Uy', // 密碼: admin123
+      name: '系統管理員',
+      email: 'admin@example.com',
+      role: 'admin'
+    });
+    console.log('Default admin user created');
 
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
   } catch (error) {
     console.error('Unable to start server:', error);
-    // 不要立即退出，讓錯誤處理更溫和
     console.error('Detailed error:', error.original || error);
   }
 }
 
 startServer();
+
+module.exports = app;

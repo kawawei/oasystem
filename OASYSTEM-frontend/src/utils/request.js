@@ -1,28 +1,23 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
-import { useRouter } from 'vue-router'
+import router from '../router'
 
 // 創建 axios 實例
 const service = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000', // API 的基礎URL
-  timeout: 15000, // 請求超時時間
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  baseURL: 'http://localhost:3000/api',
+  timeout: 5000
 })
 
 // 請求攔截器
 service.interceptors.request.use(
   config => {
-    // 從 localStorage 獲取 token
     const token = localStorage.getItem('token')
     if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`
+      config.headers.Authorization = `Bearer ${token}`
     }
     return config
   },
   error => {
-    console.error('Request error:', error)
     return Promise.reject(error)
   }
 )
@@ -33,24 +28,26 @@ service.interceptors.response.use(
     return response.data
   },
   error => {
-    console.error('Response error:', error)
-    const message = error.response?.data?.message || '請求失敗'
-    
-    // 如果是 401 錯誤，可能是未登入或 token 過期
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      // 如果不是在登入頁面，則跳轉到登入頁
-      if (window.location.pathname !== '/login') {
-        router.push('/login')
+    if (error.response) {
+      switch (error.response.status) {
+        case 401:
+          ElMessage.error('請重新登錄')
+          localStorage.removeItem('token')
+          router.push('/login')
+          break
+        case 403:
+          ElMessage.error('沒有權限')
+          break
+        case 404:
+          ElMessage.error('請求的資源不存在')
+          break
+        case 500:
+          ElMessage.error('服務器錯誤')
+          break
+        default:
+          ElMessage.error(error.response.data.message || '未知錯誤')
       }
     }
-    
-    ElMessage({
-      message,
-      type: 'error',
-      duration: 3000
-    })
     return Promise.reject(error)
   }
 )

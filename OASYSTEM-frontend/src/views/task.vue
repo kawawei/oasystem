@@ -121,6 +121,7 @@
           label-position="top"
           class="task-form"
         >
+          <!-- 任務標題 -->
           <el-form-item 
             label="任務標題" 
             prop="title"
@@ -137,6 +138,7 @@
             </el-input>
           </el-form-item>
 
+          <!-- 任務描述 -->
           <el-form-item 
             label="任務描述" 
             prop="description"
@@ -151,6 +153,7 @@
             />
           </el-form-item>
 
+          <!-- 優先級和截止日期並排 -->
           <div class="form-row">
             <el-form-item 
               label="優先級" 
@@ -177,42 +180,9 @@
             </el-form-item>
 
             <el-form-item 
-              label="負責人" 
-              prop="assignee"
-              class="form-item-half"
-            >
-              <el-select 
-                v-model="taskForm.assignee"
-                placeholder="選擇負責人"
-                class="custom-select"
-                filterable
-              >
-                <el-option
-                  v-for="user in userOptions"
-                  :key="user.id"
-                  :label="user.name"
-                  :value="user.id"
-                >
-                  <div class="user-option">
-                    <el-avatar 
-                      :size="24" 
-                      :src="user.avatar"
-                      class="user-avatar"
-                    >
-                      {{ user.name.charAt(0) }}
-                    </el-avatar>
-                    <span>{{ user.name }}</span>
-                  </div>
-                </el-option>
-              </el-select>
-            </el-form-item>
-          </div>
-
-          <div class="form-row">
-            <el-form-item 
               label="截止日期" 
               prop="dueDate"
-              class="form-item"
+              class="form-item-half"
             >
               <el-date-picker
                 v-model="taskForm.dueDate"
@@ -252,7 +222,6 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Edit, Close } from '@element-plus/icons-vue'
 import { taskAPI } from '../api/tasks'
-import { userAPI } from '../api/user'
 
 // 狀態按鈕配置
 const statusButtons = [
@@ -285,8 +254,7 @@ const taskForm = ref({
   title: '',
   description: '',
   priority: 'medium',
-  dueDate: '',
-  assignee: ''
+  dueDate: ''
 })
 
 // 優先級選項
@@ -310,22 +278,15 @@ const rules = {
   ],
   dueDate: [
     { required: true, message: '請選擇截止日期', trigger: 'change' }
-  ],
-  assignee: [
-    { required: true, message: '請選擇負責人', trigger: 'change' }
   ]
 }
-
-// 添加用戶選項的響應式數據
-const userOptions = ref([])
 
 // 在組件掛載時獲取任務數據
 onMounted(async () => {
   await loadTasks()
-  await loadUsers()
 })
 
-// 加載任務數據
+// 加載任數據
 const loadTasks = async () => {
   try {
     const response = await taskAPI.getAllTasks()
@@ -333,21 +294,6 @@ const loadTasks = async () => {
   } catch (error) {
     console.error('獲取任務失敗:', error)
     // 這裡可以添加錯誤提示
-  }
-}
-
-// 加載用戶列表
-const loadUsers = async () => {
-  try {
-    const response = await userAPI.getAllUsers()
-    userOptions.value = response
-  } catch (error) {
-    console.error('獲取用戶列表失敗:', error)
-    ElMessage({
-      message: '獲取用戶列表失敗',
-      type: 'error',
-      customClass: 'custom-message'
-    })
   }
 }
 
@@ -377,8 +323,7 @@ const handleCreateTask = () => {
     title: '',
     description: '',
     priority: 'medium',
-    dueDate: '',
-    assignee: ''
+    dueDate: ''
   }
 }
 
@@ -390,8 +335,7 @@ const handleEdit = async (task) => {
     title: task.title,
     description: task.description,
     priority: task.priority,
-    dueDate: task.dueDate,
-    assignee: task.assignee
+    dueDate: task.dueDate
   }
 }
 
@@ -811,15 +755,14 @@ const submitTask = async () => {
   box-shadow: 
     0 20px 40px rgba(0, 0, 0, 0.15),
     0 0 0 1px rgba(255, 255, 255, 0.3) inset;
-  background: rgba(255, 255, 255, 0.25);
+  background: linear-gradient(135deg, #f6f8fd, #f1f4f9);
   backdrop-filter: blur(20px);
 }
 
 .dialog-content {
   position: relative;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
+  background: linear-gradient(135deg, #f1f4f9, #e8edf5);
 }
 
 .dialog-content::before {
@@ -846,7 +789,7 @@ const submitTask = async () => {
       transparent 50%
     );
   transform: rotate(-15deg);
-  z-index: 0;
+  z-index: 1;
 }
 
 .dialog-content::after {
@@ -863,7 +806,7 @@ const submitTask = async () => {
       rgba(255, 255, 255, 0.08) 50%,
       transparent 100%
     );
-  z-index: 0;
+  z-index: 1;
 }
 
 .dialog-header {
@@ -871,6 +814,7 @@ const submitTask = async () => {
   padding: 40px 48px 40px 40px;
   position: relative;
   overflow: hidden;
+  z-index: 2;
 }
 
 .header-content h2 {
@@ -888,157 +832,127 @@ const submitTask = async () => {
 }
 
 .task-form {
-  padding: 40px;
-  position: relative;
-  z-index: 1;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-}
-
-:deep(.el-form-item__label) {
-  padding-bottom: 12px;
-  font-size: 16px;
-  color: rgba(0, 0, 0, 0.85);
-  font-weight: 600;
-  letter-spacing: -0.3px;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.1);
-}
-
-.custom-input :deep(.el-input__wrapper),
-.custom-select :deep(.el-input__wrapper),
-.custom-date-picker :deep(.el-input__wrapper) {
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 
-    0 2px 6px rgba(0, 0, 0, 0.03),
-    0 1px 2px rgba(0, 0, 0, 0.02),
-    0 0 0 1px rgba(255, 255, 255, 0.3) inset;
-}
-
-.custom-input :deep(.el-input__inner),
-.custom-select :deep(.el-input__inner) {
-  font-size: 16px;
-  color: #1d1d1f;
-}
-
-.custom-textarea :deep(.el-textarea__inner) {
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 
-    0 2px 6px rgba(0, 0, 0, 0.03),
-    0 1px 2px rgba(0, 0, 0, 0.02),
-    0 0 0 1px rgba(255, 255, 255, 0.3) inset;
-}
-
-.custom-input :deep(.el-input__wrapper):hover,
-.custom-textarea :deep(.el-textarea__inner):hover,
-.custom-select :deep(.el-input__wrapper):hover,
-.custom-date-picker :deep(.el-input__wrapper):hover {
-  background: rgba(255, 255, 255, 0.5);
-  border-color: rgba(10, 132, 255, 0.6);
-}
-
-.custom-input :deep(.el-input__wrapper).is-focus,
-.custom-textarea :deep(.el-textarea__inner):focus,
-.custom-select :deep(.el-input__wrapper).is-focus,
-.custom-date-picker :deep(.el-input__wrapper).is-focus {
-  background: rgba(255, 255, 255, 0.6);
-  border-color: #0A84FF;
-  box-shadow: 
-    0 0 0 4px rgba(10, 132, 255, 0.15),
-    0 2px 8px rgba(0, 0, 0, 0.05),
-    0 0 0 1px rgba(255, 255, 255, 0.3) inset;
-}
-
-.dialog-footer {
   padding: 32px 40px;
-  background: rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
   backdrop-filter: blur(10px);
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
   position: relative;
-  z-index: 1;
-  display: flex;
-  justify-content: flex-end;
-  gap: 16px;
+  z-index: 2;
 }
 
-.cancel-btn {
-  padding: 12px 28px;
-  font-size: 15px;
-  border-radius: 14px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(4px);
-  color: #1d1d1f;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.cancel-btn:hover {
-  background: rgba(255, 255, 255, 0.5);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-}
-
-.submit-btn {
-  padding: 12px 32px;
-  font-size: 15px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, 
-    rgba(10, 132, 255, 0.9), 
-    rgba(0, 102, 204, 0.9)
-  );
-  backdrop-filter: blur(4px);
-  border: none;
-  color: white;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-}
-
-.submit-btn:hover {
-  background: linear-gradient(135deg, 
-    rgba(0, 145, 255, 0.95), 
-    rgba(0, 116, 229, 0.95)
-  );
-  transform: translateY(-1px);
-  box-shadow: 
-    0 4px 12px rgba(10, 132, 255, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
-}
-
-.priority-option {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 8px;
-  font-size: 15px;
-}
-
-.priority-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
+/* 表單項通用樣式 */
+.form-item {
   margin-bottom: 24px;
 }
 
-.form-item {
-  margin-bottom: 28px;
+/* 並排布局 */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
 }
 
-.custom-input :deep(.el-input__prefix),
-.custom-select :deep(.el-input__prefix),
-.custom-date-picker :deep(.el-input__prefix) {
-  font-size: 18px;
-  margin-right: 8px;
-  color: #0A84FF;
+.form-item-half {
+  margin-bottom: 0;
+}
+
+/* 標籤樣式 */
+:deep(.el-form-item__label) {
+  padding-bottom: 8px;
+  font-size: 0.95rem;
+  color: #1d1d1f;
+  font-weight: 500;
+}
+
+/* 輸入框樣式 */
+.custom-input :deep(.el-input__wrapper),
+.custom-select :deep(.el-input__wrapper),
+.custom-date-picker :deep(.el-input__wrapper),
+.custom-textarea :deep(.el-textarea__inner) {
+  position: relative;
+  z-index: 3;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.02),
+    0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+  transition: all 0.3s ease;
+}
+
+/* 輸入框懸停效果 */
+.custom-input :deep(.el-input__wrapper):hover,
+.custom-select :deep(.el-input__wrapper):hover,
+.custom-date-picker :deep(.el-input__wrapper):hover,
+.custom-textarea :deep(.el-textarea__inner):hover {
+  border-color: #0A84FF;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+/* 輸入框聚焦效果 */
+.custom-input :deep(.el-input__wrapper.is-focus),
+.custom-select :deep(.el-input__wrapper.is-focus),
+.custom-date-picker :deep(.el-input__wrapper.is-focus),
+.custom-textarea :deep(.el-textarea__inner:focus) {
+  border-color: #0A84FF;
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.3);
+  background: #fff;
+}
+
+/* 優先級選項樣式 */
+.priority-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+}
+
+.priority-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.priority-dot.high {
+  background: #FF3B30;
+}
+
+.priority-dot.medium {
+  background: #FF9500;
+}
+
+.priority-dot.low {
+  background: #34C759;
+}
+
+/* 表單驗證錯誤提示樣式 */
+:deep(.el-form-item.is-error .el-input__wrapper) {
+  border-color: #FF3B30;
+  box-shadow: 0 0 0 1px rgba(255, 59, 48, 0.1);
+}
+
+:deep(.el-form-item__error) {
+  font-size: 0.8rem;
+  color: #FF3B30;
+  padding-top: 4px;
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .form-item-half {
+    margin-bottom: 16px;
+  }
+  
+  .task-form {
+    padding: 24px;
+  }
 }
 
 /* 關閉按鈕樣式優化 */
@@ -1098,7 +1012,7 @@ const submitTask = async () => {
   border: 0.5px solid rgba(255, 59, 48, 0.2);
 }
 
-/* 消息內容文字 */
+/* 息內容文字 */
 :deep(.custom-message .el-message__content) {
   color: #1d1d1f;
   font-size: 15px;
@@ -1154,7 +1068,7 @@ const submitTask = async () => {
   }
 }
 
-/* 用戶選項樣��� */
+/* 用戶選項樣 */
 .user-option {
   display: flex;
   align-items: center;
@@ -1196,5 +1110,55 @@ const submitTask = async () => {
   background: rgba(0, 122, 255, 0.15);
   color: #0A84FF;
   font-weight: 600;
+}
+
+/* 修改底部按鈕區域樣式 */
+.dialog-footer {
+  padding: 32px 40px;
+  background: linear-gradient(135deg, #f1f4f9, #e8edf5);
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+/* 修改取消按鈕樣式 */
+.cancel-btn {
+  padding: 12px 28px;
+  font-size: 15px;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.8);
+  color: #1d1d1f;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* 修改提交按鈕樣式 */
+.submit-btn {
+  padding: 12px 32px;
+  font-size: 15px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #0A84FF, #0066CC);
+  border: none;
+  color: white;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.submit-btn:hover {
+  background: linear-gradient(135deg, #0091FF, #0074E5);
+  transform: translateY(-1px);
+  box-shadow: 
+    0 4px 12px rgba(10, 132, 255, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
 }
 </style>

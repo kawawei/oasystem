@@ -1,0 +1,807 @@
+<template>
+  <div class="team-container">
+    <!-- 頁面標題 -->
+    <div class="page-header glass-light">
+      <h2><i class="fas fa-users"></i> 團隊管理</h2>
+      <!-- 重新設計的創建按鈕 -->
+      <el-button 
+        class="create-team-btn glass-button" 
+        @click="showCreateTeamDialog">
+        <span class="btn-content">
+          <i class="fas fa-plus-circle"></i>
+          <span>創建團隊</span>
+        </span>
+      </el-button>
+    </div>
+
+    <!-- 團隊管理卡片 -->
+    <el-card class="team-card glass">
+      <!-- 團隊列表和切換 -->
+      <el-tabs v-model="activeTeam" @tab-click="handleTeamChange" class="custom-tabs">
+        <el-tab-pane 
+          v-for="team in teams" 
+          :key="team.id" 
+          :label="team.name"
+          :name="team.id.toString()">
+          <!-- 團隊信息卡片 -->
+          <div class="team-info glass-light">
+            <div class="team-header">
+              <div class="team-title">
+                <i class="fas fa-users-cog"></i>
+                <h3>{{ team.name }}</h3>
+                <el-tag v-if="team.creator === currentUserId" size="small" type="success">創建者</el-tag>
+              </div>
+              <el-button type="success" size="small" @click="showAddMemberDialog(team.id)">
+                <i class="fas fa-user-plus"></i> 添加成員
+              </el-button>
+            </div>
+            
+            <!-- 團隊統計信息 -->
+            <div class="team-stats">
+              <div class="stat-item">
+                <i class="fas fa-users"></i>
+                <span>{{ team.members.length }} 位成員</span>
+              </div>
+              <div class="stat-item">
+                <i class="fas fa-tasks"></i>
+                <span>{{ team.tasks?.length || 0 }} 個任務</span>
+              </div>
+              <div class="stat-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span>創建於 {{ formatDate(team.createdAt) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 團隊成員列表 -->
+          <div class="team-members">
+            <h4><i class="fas fa-user-friends"></i> 團隊成員</h4>
+            <el-table 
+              :data="team.members" 
+              style="width: 100%"
+              class="custom-table">
+              <el-table-column width="60">
+                <template #default="scope">
+                  <el-avatar :size="40" :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(scope.row.username)}&background=random`"></el-avatar>
+                </template>
+              </el-table-column>
+              <el-table-column prop="username" label="用戶名"></el-table-column>
+              <el-table-column prop="email" label="郵箱"></el-table-column>
+              <el-table-column prop="role" label="角色" width="120">
+                <template #default="scope">
+                  <el-tag :type="scope.row.role === 'admin' ? 'danger' : 'success'" size="small">
+                    {{ scope.row.role === 'admin' ? '管理員' : '成員' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+        </el-tab-pane>
+      </el-tabs>
+    </el-card>
+
+    <!-- Apple 風格的創建團隊對話框 -->
+    <el-dialog 
+      v-model="createTeamDialogVisible"
+      :show-close="false"
+      width="460px"
+      class="create-team-dialog">
+      <div class="dialog-content">
+        <!-- 頂部圖標 -->
+        <div class="dialog-icon">
+          <div class="icon-bg">
+            <i class="fas fa-rocket"></i>
+          </div>
+        </div>
+
+        <!-- 主要內容 -->
+        <div class="dialog-body">
+          <h3>創建團隊</h3>
+          <p class="subtitle">開始一段新的協作之旅</p>
+
+          <el-form 
+            :model="newTeam" 
+            :rules="teamRules" 
+            ref="teamForm"
+            :validate-on-rule-change="false">
+            <el-form-item prop="name">
+              <el-input 
+                v-model="newTeam.name" 
+                class="team-name-input"
+                :placeholder="inputPlaceholder"
+                @focus="handleInputFocus"
+                @blur="handleInputBlur">
+              </el-input>
+            </el-form-item>
+          </el-form>
+
+          <div class="dialog-footer">
+            <button 
+              class="cancel-btn" 
+              @click="createTeamDialogVisible = false">
+              取消
+            </button>
+            <button 
+              class="confirm-btn" 
+              @click="createTeam">
+              建立團隊
+            </button>
+          </div>
+        </div>
+      </div>
+    </el-dialog>
+
+    <!-- 添加成員對話框 -->
+    <el-dialog 
+      title="添加團隊成員" 
+      v-model="addMemberDialogVisible"
+      width="30%"
+      class="custom-dialog">
+      <el-form :model="newMember" :rules="memberRules" ref="memberForm">
+        <el-form-item label="成員郵箱" prop="email">
+          <el-input 
+            v-model="newMember.email" 
+            placeholder="請輸入成員郵箱"
+            prefix-icon="fas fa-envelope">
+          </el-input>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span>
+          <el-button @click="addMemberDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="addMember">
+            <i class="fas fa-user-plus"></i> 添加
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+import axios from 'axios'
+import { useStore } from 'vuex'  // 導入 useStore
+import { ref, onMounted } from 'vue'  // 導入 ref 和 onMounted
+
+// 創建一個 axios 實例
+const api = axios.create({
+  baseURL: 'http://localhost:3000',
+  timeout: 5000
+});
+
+export default {
+  name: 'TeamManagement',
+  setup() {  // 使用 setup 函數
+    const store = useStore()  // 獲取 store 實例
+    const activeTeam = ref('')
+
+    const handleTeamChange = (tab) => {
+      if (tab && tab.name) {
+        store.commit('setCurrentTeam', tab.name)
+      }
+    }
+
+    return {
+      activeTeam,
+      handleTeamChange
+    }
+  },
+  data() {
+    return {
+      teams: [],
+      createTeamDialogVisible: false,
+      addMemberDialogVisible: false,
+      currentTeamId: null,
+      newTeam: {
+        name: ''
+      },
+      newMember: {
+        email: ''
+      },
+      inputPlaceholder: '輸入團隊名稱',
+      isError: false,
+      teamRules: {
+        name: [
+          { required: true, trigger: 'change' }
+        ]
+      },
+      memberRules: {
+        email: [
+          { required: true, message: '請輸入郵箱地址', trigger: 'blur' },
+          { type: 'email', message: '請輸入正確的郵箱地址', trigger: 'blur' }
+        ]
+      },
+      currentUserId: null
+    }
+  },
+  methods: {
+    async fetchTeams() {
+      try {
+        console.log('Fetching teams...');
+        const response = await api.get('/api/teams', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        console.log('Teams response:', response.data);
+        this.teams = response.data;
+      } catch (error) {
+        console.error('Error fetching teams:', error);
+        this.$message.error('獲取團隊列表失敗');
+      }
+    },
+    showCreateTeamDialog() {
+      this.createTeamDialogVisible = true;
+      this.newTeam.name = '';
+      this.inputPlaceholder = '輸入團隊名稱';
+      this.isError = false;
+      if (this.$refs.teamForm) {
+        this.$refs.teamForm.resetFields();
+      }
+    },
+    showAddMemberDialog(teamId) {
+      this.addMemberDialogVisible = true;
+      this.currentTeamId = teamId;
+      this.newMember.email = '';
+    },
+    handleInputFocus() {
+      if (this.isError) {
+        this.inputPlaceholder = '輸入團隊名稱';
+        this.isError = false;
+      }
+    },
+    handleInputBlur() {
+      if (!this.newTeam.name.trim() && !this.isError) {
+        this.inputPlaceholder = '輸入團隊名稱';
+      }
+    },
+    async createTeam() {
+      try {
+        const response = await api.post('/api/teams', this.newTeam, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        // 確保新團隊數據格式正確
+        const newTeam = {
+          ...response.data,
+          members: response.data.members || [],
+          tasks: response.data.tasks || []
+        };
+        
+        // 更新本地數據
+        this.teams = [newTeam, ...this.teams];
+        this.activeTeam = String(newTeam.id);
+        
+        this.createTeamDialogVisible = false;
+        this.$message.success('創建團隊成功');
+      } catch (error) {
+        console.error('Error creating team:', error);
+        this.$message.error(error.response?.data?.message || '創建團隊失敗');
+      }
+    },
+    async addMember() {
+      try {
+        await this.$refs.memberForm.validate();
+        await api.post('/api/teams/members', {
+          teamId: this.currentTeamId,
+          email: this.newMember.email
+        }, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        this.addMemberDialogVisible = false;
+        this.$message.success('添加成員成功');
+        this.fetchTeams();
+      } catch (error) {
+        if (error.message) {
+          this.$message.error(error.message);
+        }
+      }
+    },
+    formatDate(date) {
+      if (!date) return '';
+      const d = new Date(date);
+      return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+    }
+  },
+  created() {
+    console.log('Team component created');
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user) {
+      this.currentUserId = user.id;
+    }
+    this.fetchTeams();
+  }
+}
+</script>
+
+<style scoped>
+.team-container {
+  padding: 20px;
+  min-height: calc(100vh - 120px);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px 24px;
+  border-radius: 12px;
+}
+
+.page-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.create-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.team-card {
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.custom-tabs :deep(.el-tabs__nav-wrap::after) {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.team-info {
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.team-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.team-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.team-title i {
+  font-size: 24px;
+  color: #409EFF;
+}
+
+.team-title h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #2c3e50;
+}
+
+.team-stats {
+  display: flex;
+  gap: 24px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #606266;
+}
+
+.stat-item i {
+  color: #409EFF;
+}
+
+.team-members {
+  margin-top: 24px;
+}
+
+.team-members h4 {
+  margin-bottom: 16px;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.custom-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.custom-table :deep(.el-table__header) {
+  background-color: rgba(64, 158, 255, 0.1);
+}
+
+/* 毛玻璃效果 */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+}
+
+/* 自定義對話框樣式 */
+:deep(.custom-dialog .el-dialog) {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+:deep(.custom-dialog .el-dialog__header) {
+  padding: 20px 24px;
+  margin: 0;
+  background: #f5f7fa;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+:deep(.custom-dialog .el-dialog__body) {
+  padding: 24px;
+}
+
+:deep(.custom-dialog .el-dialog__footer) {
+  padding: 16px 24px;
+  border-top: 1px solid #e4e7ed;
+}
+
+/* 添加新的樣式 */
+.create-team-btn {
+  background: linear-gradient(135deg, #34C759 0%, #30D158 100%);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 16px;
+  color: white;
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(52, 199, 89, 0.2);
+}
+
+.create-team-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(52, 199, 89, 0.3);
+}
+
+.create-team-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(52, 199, 89, 0.2);
+}
+
+.btn-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-content i {
+  font-size: 1.2rem;
+}
+
+/* 更新對話框樣式 */
+.create-team-dialog :deep(.el-overlay) {
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.create-team-dialog :deep(.el-dialog) {
+  background: transparent !important;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: none;
+  padding: 0;
+  margin: 0 !important;
+}
+
+.create-team-dialog :deep(.el-dialog__header),
+.create-team-dialog :deep(.el-dialog__body) {
+  padding: 0;
+  margin: 0;
+  background: transparent;
+}
+
+.dialog-content {
+  background: linear-gradient(135deg, #2B3A67, #5C258D);
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+}
+
+.dialog-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.icon-bg {
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(135deg, #4CAF50, #45B649);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+}
+
+.icon-bg i {
+  font-size: 36px;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.dialog-body h3 {
+  font-size: 28px;
+  font-weight: 600;
+  color: white;
+  margin: 0;
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.subtitle {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+  margin: 8px 0 32px;
+}
+
+.team-name-input {
+  margin-bottom: 40px;
+}
+
+.team-name-input :deep(.el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: none !important;
+  border-radius: 12px;
+  height: 52px;
+  transition: all 0.3s ease;
+}
+
+.team-name-input :deep(.el-input__wrapper.is-error) {
+  border-color: rgba(255, 59, 48, 0.4);
+  background: rgba(255, 59, 48, 0.15);
+}
+
+.team-name-input :deep(.el-input__inner) {
+  height: 52px;
+  font-size: 16px;
+  color: white;
+  padding: 0 20px;
+}
+
+.team-name-input :deep(.el-input__inner::placeholder) {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.team-name-input.is-error :deep(.el-input__inner::placeholder) {
+  color: rgba(255, 59, 48, 0.8);
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.cancel-btn, .confirm-btn {
+  font-size: 16px;
+  font-weight: 500;
+  padding: 12px 32px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.confirm-btn {
+  background: #4CAF50;
+  color: white;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.confirm-btn:hover {
+  background: #45B649;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* 更新動畫效果 */
+.create-team-dialog :deep(.el-dialog) {
+  transform: scale(0.95);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.create-team-dialog :deep(.el-dialog.dialog-fade-enter-active) {
+  transform: scale(1);
+  opacity: 1;
+}
+
+/* 除錯誤提示相關樣式 */
+.team-name-input :deep(.el-form-item__error) {
+  display: none;
+}
+
+.team-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.team-title .el-tag {
+  margin-left: 8px;
+}
+
+.stat-item {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px 16px;
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+}
+
+/* 自定義標籤樣式 */
+.custom-tabs :deep(.el-tabs__nav-wrap) {
+  padding: 0 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
+}
+
+.custom-tabs :deep(.el-tabs__nav) {
+  border: none !important;
+}
+
+.custom-tabs :deep(.el-tabs__item) {
+  height: 32px;
+  line-height: 32px;
+  padding: 0;
+  font-size: 15px;  /* 增加字體大小 */
+  font-weight: 500;  /* 加粗字體 */
+  color: #606266;
+  border: none;
+  margin: 4px;
+  border-radius: 6px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  width: 80px;
+  text-align: center;
+}
+
+.custom-tabs :deep(.el-tabs__item:hover) {
+  color: #409EFF;
+  background: rgba(64, 158, 255, 0.08);
+}
+
+.custom-tabs :deep(.el-tabs__item.is-active) {
+  color: white;
+  background: linear-gradient(135deg, #409EFF, #36D1DC);
+  font-weight: 600;  /* 活動標籤更粗 */
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
+}
+
+/* 移除底部線條 */
+.custom-tabs :deep(.el-tabs__nav-wrap::after) {
+  display: none;
+}
+
+/* 移除默認的藍色條 */
+.custom-tabs :deep(.el-tabs__active-bar) {
+  display: none;
+}
+
+/* 標籤內容區域樣式 */
+.custom-tabs :deep(.el-tabs__content) {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+/* 標籤文字樣式 */
+.custom-tabs :deep(.el-tabs__item span) {
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 8px;
+  letter-spacing: 0.5px;  /* 增加字間距 */
+}
+
+/* 添加成員按鈕樣式 */
+.team-header :deep(.el-button) {
+  height: 40px;
+  padding: 0 24px;
+  font-size: 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #34C759 0%, #30D158 100%);
+  border: none;
+  color: white;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(52, 199, 89, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.team-header :deep(.el-button:hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(52, 199, 89, 0.3);
+}
+
+.team-header :deep(.el-button:active) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(52, 199, 89, 0.2);
+}
+
+.team-header :deep(.el-button i) {
+  font-size: 16px;
+  margin-right: 4px;
+}
+
+/* 創建者標籤樣式 */
+.team-title :deep(.el-tag) {
+  height: 32px;  /* 再增加一點高度 */
+  line-height: 32px;
+  padding: 0 16px;  /* 增加內邊距 */
+  font-size: 15px;  /* 增加字體大小 */
+  font-weight: 500;
+  border: none;
+  background: linear-gradient(135deg, #34C759 0%, #30D158 100%);
+  color: white;
+  border-radius: 10px;  /* 增加圓角 */
+  box-shadow: 0 4px 12px rgba(52, 199, 89, 0.2);
+  margin-left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;  /* 增加間距 */
+}
+
+/* 皇冠圖標 */
+.team-title :deep(.el-tag)::before {
+  content: '��';
+  font-size: 16px;  /* 增加圖標大小 */
+  margin-right: 4px;
+  transform: scale(1.2);  /* 使用 transform 讓圖標更大 */
+}
+
+/* 懸浮效果 */
+.team-title :deep(.el-tag:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(52, 199, 89, 0.3);
+}
+</style>

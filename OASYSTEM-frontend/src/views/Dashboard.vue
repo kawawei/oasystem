@@ -18,6 +18,14 @@
           <i class="fas fa-tasks"></i>
           <span>任務管理</span>
         </router-link>
+        <router-link to="/team" class="nav-item" :class="{ active: $route.path === '/team' }">
+          <i class="fas fa-users"></i>
+          <span>團隊</span>
+        </router-link>
+        <router-link to="/settings" class="nav-item" :class="{ active: $route.path === '/settings' }">
+          <i class="fas fa-cog"></i>
+          <span>基礎設置</span>
+        </router-link>
       </nav>
     </aside>
 
@@ -88,7 +96,6 @@ export default {
   }
 }
 </script>
-
 <style scoped>
 /* 基礎樣式 */
 .dashboard-container {
@@ -554,3 +561,4 @@ export default {
   opacity: 0;
 }
 </style>
+

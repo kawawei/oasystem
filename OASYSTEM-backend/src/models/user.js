@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs')
+const { DataTypes } = require('sequelize');
 
-module.exports = (sequelize, DataTypes) => {
+module.exports = (sequelize) => {
   const User = sequelize.define('User', {
     id: {
       type: DataTypes.INTEGER,
@@ -31,10 +32,20 @@ module.exports = (sequelize, DataTypes) => {
     role: {
       type: DataTypes.ENUM('admin', 'user'),
       defaultValue: 'user'
+    },
+    avatar: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null
+    },
+    systemName: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: 'OA System'
     }
   }, {
     tableName: 'Users',
-    timestamps: true  // 這會自動處理 createdAt 和 updatedAt
+    timestamps: true
   });
 
   return User;

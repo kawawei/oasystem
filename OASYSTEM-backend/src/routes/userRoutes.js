@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
-const authMiddleware = require('../middleware/authMiddleware');
+const auth = require('../middleware/auth');
 
-router.use(authMiddleware);
-router.get('/', userController.getAllUsers);
+// 獲取用戶個人資料
+router.get('/profile', auth, userController.getProfile);
 
 module.exports = router; 

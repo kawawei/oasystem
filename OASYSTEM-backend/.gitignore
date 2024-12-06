@@ -25,3 +25,8 @@ npm-debug.log*
 # OS
 .DS_Store
 Thumbs.db 
+
+# 上傳文件目錄
+uploads/
+uploads/*
+!uploads/.gitkeep 

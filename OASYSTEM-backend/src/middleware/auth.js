@@ -2,6 +2,8 @@ const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 
 const authMiddleware = async (req, res, next) => {
+  console.log('Auth middleware accessed');
+  console.log('Headers:', req.headers);
   try {
     // 從請求頭獲取 token
     const token = req.headers.authorization?.split(' ')[1];

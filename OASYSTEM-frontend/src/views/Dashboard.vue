@@ -22,13 +22,13 @@
           <i class="fas fa-users"></i>
           <span>團隊</span>
         </router-link>
-        <router-link to="/settings" class="nav-item" :class="{ active: $route.path === '/settings' }">
-          <i class="fas fa-cog"></i>
-          <span>基礎設置</span>
-        </router-link>
         <router-link to="/notes" class="nav-item" :class="{ active: $route.path === '/notes' }">
           <i class="fas fa-sticky-note"></i>
           <span>筆記</span>
+        </router-link>
+        <router-link to="/settings" class="nav-item" :class="{ active: $route.path === '/settings' }">
+          <i class="fas fa-cog"></i>
+          <span>基礎設置</span>
         </router-link>
       </nav>
     </aside>
@@ -67,13 +67,23 @@
 </template>
 
 <script>
+import axios from 'axios'
+import eventBus from '@/utils/eventBus'
+
+// 創建 axios 實例
+const api = axios.create({
+  baseURL: 'http://localhost:3000',
+  timeout: 5000
+})
+
 export default {
   name: 'Dashboard',
   data() {
     return {
       username: '',
       email: '',
-      userAvatar: 'https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff',
+      userAvatar: '',
+      defaultAvatar: 'https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff',
       sidebarVisible: true
     }
   },
@@ -82,13 +92,39 @@ export default {
     if (user) {
       this.username = user.username;
       this.email = user.email;
-      // 生成基於用戶名的頭像
-      this.userAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=0D8ABC&color=fff`;
+      this.fetchUserAvatar();
+      // 監聽頭像更新事件
+      eventBus.on('avatar-updated', (newAvatarUrl) => {
+        this.userAvatar = newAvatarUrl;
+      });
     } else {
       this.$router.push('/login');
     }
   },
+  beforeUnmount() {
+    // 清理事件監聽
+    eventBus.off('avatar-updated');
+  },
   methods: {
+    async fetchUserAvatar() {
+      try {
+        const response = await api.get('/api/users/profile', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (response.data.avatar) {
+          this.userAvatar = `${api.defaults.baseURL}/uploads/${response.data.avatar}`;
+        } else {
+          // 如果沒有頭像，使用默認頭像
+          this.userAvatar = this.defaultAvatar;
+        }
+      } catch (error) {
+        console.error('Fetch avatar error:', error);
+        this.userAvatar = this.defaultAvatar;
+      }
+    },
     handleLogout() {
       localStorage.removeItem('token');
       localStorage.removeItem('user');

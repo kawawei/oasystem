@@ -15,6 +15,23 @@ const userController = {
         error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
+  },
+  // 獲取用戶個人資料
+  async getProfile(req, res) {
+    try {
+      const user = await User.findByPk(req.user.id, {
+        attributes: ['id', 'username', 'email', 'avatar', 'systemName']
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: '用戶不存在' });
+      }
+
+      res.json(user);
+    } catch (error) {
+      console.error('Get profile error:', error);
+      res.status(500).json({ message: '獲取用戶資料失敗' });
+    }
   }
 };
 

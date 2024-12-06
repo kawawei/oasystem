@@ -1,24 +1,30 @@
-import axios from 'axios';
-
-const API_URL = 'http://localhost:3000/api';
+import request from '../utils/request'
 
 export const authAPI = {
-  // 登錄
-  login: async (username, password) => {
-    const response = await axios.post(`${API_URL}/auth/login`, {
-      username,
-      password
-    });
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+  login(data) {
+    const loginData = {
+      username: data.username,
+      password: data.password
     }
-    return response.data;
+    return request({
+      url: '/api/auth/login',
+      method: 'post',
+      data: loginData
+    })
   },
 
-  // 登出
-  logout: () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  register(data) {
+    return request({
+      url: '/api/auth/register',
+      method: 'post',
+      data
+    })
+  },
+
+  logout() {
+    return request({
+      url: '/api/auth/logout',
+      method: 'post'
+    })
   }
-}; 
+} 

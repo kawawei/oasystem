@@ -14,7 +14,7 @@
             <i class="fas fa-user"></i>
             <input 
               type="text" 
-              v-model="username" 
+              v-model="loginForm.username" 
               placeholder="用戶名"
               required
             >
@@ -25,7 +25,7 @@
             <i class="fas fa-lock"></i>
             <input 
               :type="showPassword ? 'text' : 'password'"
-              v-model="password" 
+              v-model="loginForm.password" 
               placeholder="密碼"
               required
             >
@@ -61,58 +61,53 @@
   </div>
 </template>
 
-<script>
-import { authApi } from '../api/auth';
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { authAPI } from '../api/auth'
 
-export default {
-  name: 'Login',
-  data() {
-    return {
-      username: '',
-      password: '',
-      rememberMe: false,
-      showPassword: false,
-      isLoading: false,
-      errorMessage: ''
-    }
-  },
-  methods: {
-    async handleLogin() {
-      if (!this.username || !this.password) {
-        this.errorMessage = '請輸入用戶名和密碼';
-        return;
+const router = useRouter()
+const showPassword = ref(false)
+const isLoading = ref(false)
+
+const loginForm = ref({
+  username: '',
+  password: ''
+})
+
+const togglePassword = () => {
+  showPassword.value = !showPassword.value
+}
+
+const handleLogin = async () => {
+  if (!loginForm.value.username || !loginForm.value.password) {
+    ElMessage.error('請輸入用戶名和密碼')
+    return
+  }
+
+  isLoading.value = true
+  try {
+    const response = await authAPI.login({
+      username: loginForm.value.username,
+      password: loginForm.value.password
+    })
+    
+    if (response.token) {
+      localStorage.setItem('token', response.token)
+      if (response.user) {
+        localStorage.setItem('user', JSON.stringify(response.user))
       }
-      
-      this.isLoading = true;
-      this.errorMessage = '';
-      
-      try {
-        const response = await authApi.login(this.username, this.password);
-        
-        // 保存 token 到 localStorage
-        localStorage.setItem('token', response.token);
-        
-        // 保存用戶信息
-        localStorage.setItem('user', JSON.stringify(response.user));
-        
-        // 跳轉到儀表板
-        this.$router.push('/dashboard');
-      } catch (error) {
-        console.error('登入失敗:', error);
-        this.errorMessage = error.response?.data?.message || '登入失敗，請稍後重試';
-      } finally {
-        this.isLoading = false;
-      }
-    },
-    togglePassword() {
-      this.showPassword = !this.showPassword
-    },
-    handleForgotPassword() {
-      console.log('忘記密碼')
-    },
-    handleRegister() {
-      this.$router.push('/register')
+      ElMessage.success('登入成功')
+      router.push('/dashboard')
+    } else {
+      throw new Error('登入失敗：未收到token')
     }
+  } catch (error) {
+    console.error('登入失敗:', error)
+    ElMessage.error(error.response?.data?.message || '登入失敗，請檢查用戶名和密碼')
+  } finally {
+    isLoading.value = false
   }
 }
 </script>

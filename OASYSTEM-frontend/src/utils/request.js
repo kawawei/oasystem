@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import { useRouter } from 'vue-router'
 
 // 創建 axios 實例
 const service = axios.create({
@@ -34,6 +35,17 @@ service.interceptors.response.use(
   error => {
     console.error('Response error:', error)
     const message = error.response?.data?.message || '請求失敗'
+    
+    // 如果是 401 錯誤，可能是未登入或 token 過期
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      // 如果不是在登入頁面，則跳轉到登入頁
+      if (window.location.pathname !== '/login') {
+        router.push('/login')
+      }
+    }
+    
     ElMessage({
       message,
       type: 'error',

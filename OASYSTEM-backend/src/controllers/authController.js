@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const bcrypt = require('bcrypt');
 
 const authController = {
   // 用戶註冊
@@ -58,19 +59,30 @@ const authController = {
       const { username, password } = req.body;
       console.log('Login attempt:', { username });
 
+      // 驗證請求數據
+      if (!username || !password) {
+        return res.status(400).json({
+          success: false,
+          message: '用戶名和密碼都是必須的'
+        });
+      }
+
       // 查找用戶
       const user = await User.findOne({ where: { username } });
       if (!user) {
-        console.log('User not found:', username);
-        return res.status(401).json({ message: '用戶名或密碼錯誤' });
+        return res.status(401).json({
+          success: false,
+          message: '用戶名或密碼錯誤'
+        });
       }
 
       // 驗證密碼
-      const isValidPassword = await user.comparePassword(password);
-      console.log('Password validation:', { isValid: isValidPassword });
-      
+      const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
-        return res.status(401).json({ message: '用戶名或密碼錯誤' });
+        return res.status(401).json({
+          success: false,
+          message: '用戶名或密碼錯誤'
+        });
       }
 
       // 生成 JWT token
@@ -81,7 +93,7 @@ const authController = {
       );
 
       res.json({
-        message: '登入成功',
+        success: true,
         token,
         user: {
           id: user.id,
@@ -90,10 +102,10 @@ const authController = {
         }
       });
     } catch (error) {
-      console.error('Login error details:', error);
-      res.status(500).json({ 
-        message: '登入失敗',
-        error: error.message
+      console.error('Login error:', error);
+      res.status(500).json({
+        success: false,
+        message: '登入過程中發生錯誤'
       });
     }
   }

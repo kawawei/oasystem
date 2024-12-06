@@ -777,7 +777,7 @@ export default {
 .team-title :deep(.el-tag) {
   height: 32px;  /* 再增加一點高度 */
   line-height: 32px;
-  padding: 0 16px;  /* 增加內邊距 */
+  padding: 0 16px;  /* 增加內邊��� */
   font-size: 15px;  /* 增加字體大小 */
   font-weight: 500;
   border: none;
@@ -793,7 +793,7 @@ export default {
 
 /* 皇冠圖標 */
 .team-title :deep(.el-tag)::before {
-  content: '��';
+  content: '';
   font-size: 16px;  /* 增加圖標大小 */
   margin-right: 4px;
   transform: scale(1.2);  /* 使用 transform 讓圖標更大 */

@@ -1,4 +1,5 @@
 import { createApp } from 'vue';
+import { createStore } from 'vuex';
 import App from './App.vue';
 import router from './router/index.js';
 import axios from 'axios';
@@ -21,6 +22,26 @@ axiosInstance.interceptors.request.use(config => {
   return config;
 });
 
+// 創建 store
+const store = createStore({
+  state() {
+    return {
+      // 添加您需要的狀態
+      user: null,
+      teams: []
+    }
+  },
+  mutations: {
+    // 添加您需要的 mutations
+    setUser(state, user) {
+      state.user = user
+    },
+    setTeams(state, teams) {
+      state.teams = teams
+    }
+  }
+});
+
 const app = createApp(App);
 
 // 註冊所有圖標
@@ -32,5 +53,6 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 app.config.globalProperties.$axios = axiosInstance;
 
 app.use(router);
+app.use(store);
 app.use(ElementPlus);
 app.mount('#app');

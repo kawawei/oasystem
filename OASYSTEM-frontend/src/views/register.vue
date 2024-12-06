@@ -72,70 +72,69 @@
   </div>
 </template>
 
-<script>
-import { authApi } from '../api/auth';
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { authAPI } from '../api/auth'
 
-export default {
-  name: 'Register',
-  data() {
-    return {
-      username: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      showPassword: false,
-      isLoading: false,
-      errorMessage: ''
-    }
-  },
-  methods: {
-    async handleRegister() {
-      // 基本驗證
-      if (!this.username || !this.email || !this.password || !this.confirmPassword) {
-        this.errorMessage = '請填寫所有欄位';
-        return;
-      }
+const router = useRouter()
+const username = ref('')
+const email = ref('')
+const password = ref('')
+const confirmPassword = ref('')
+const showPassword = ref(false)
+const isLoading = ref(false)
+const errorMessage = ref('')
 
-      if (this.password !== this.confirmPassword) {
-        this.errorMessage = '兩次輸入的密碼不一致';
-        return;
-      }
-
-      if (this.password.length < 6) {
-        this.errorMessage = '密碼長度至少需要6個字符';
-        return;
-      }
-
-      this.isLoading = true;
-      this.errorMessage = '';
-      
-      try {
-        const response = await authApi.register(
-          this.username,
-          this.email,
-          this.password
-        );
-        
-        // 註冊成功後自動登入
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('user', JSON.stringify(response.user));
-        
-        // 跳轉到儀表板
-        this.$router.push('/dashboard');
-      } catch (error) {
-        console.error('註冊失敗:', error);
-        this.errorMessage = error.response?.data?.message || '註冊失敗，請稍後重試';
-      } finally {
-        this.isLoading = false;
-      }
-    },
-    togglePassword() {
-      this.showPassword = !this.showPassword;
-    },
-    goToLogin() {
-      this.$router.push('/login');
-    }
+const handleRegister = async () => {
+  // 基本驗證
+  if (!username.value || !email.value || !password.value || !confirmPassword.value) {
+    errorMessage.value = '請填寫所有欄位'
+    return
   }
+
+  if (password.value !== confirmPassword.value) {
+    errorMessage.value = '兩次輸入的密碼不一致'
+    return
+  }
+
+  if (password.value.length < 6) {
+    errorMessage.value = '密碼長度至少需要6個字符'
+    return
+  }
+
+  isLoading.value = true
+  errorMessage.value = ''
+  
+  try {
+    const response = await authAPI.register({
+      username: username.value,
+      email: email.value,
+      password: password.value
+    })
+    
+    // 註冊成功後自動登入
+    localStorage.setItem('token', response.token)
+    localStorage.setItem('user', JSON.stringify(response.user))
+    
+    ElMessage.success('註冊成功')
+    // 跳轉到儀表板
+    router.push('/dashboard')
+  } catch (error) {
+    console.error('註冊失敗:', error)
+    errorMessage.value = error.response?.data?.message || '註冊失敗，請稍後重試'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const togglePassword = () => {
+  showPassword.value = !showPassword.value
+}
+
+const goToLogin = () => {
+  router.push('/login')
 }
 </script>
 

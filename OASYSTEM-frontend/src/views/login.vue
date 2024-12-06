@@ -70,6 +70,8 @@ import { authAPI } from '../api/auth'
 const router = useRouter()
 const showPassword = ref(false)
 const isLoading = ref(false)
+const errorMessage = ref('')
+const rememberMe = ref(false)
 
 const loginForm = ref({
   username: '',
@@ -109,6 +111,10 @@ const handleLogin = async () => {
   } finally {
     isLoading.value = false
   }
+}
+
+const handleRegister = () => {
+  router.push('/register')
 }
 </script>
 

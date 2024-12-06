@@ -1,21 +1,17 @@
 import request from '../utils/request'
 
 export const authAPI = {
-  login(data) {
-    const loginData = {
-      username: data.username,
-      password: data.password
-    }
+  register(data) {
     return request({
-      url: '/api/auth/login',
+      url: '/auth/register',
       method: 'post',
-      data: loginData
+      data
     })
   },
 
-  register(data) {
+  login(data) {
     return request({
-      url: '/api/auth/register',
+      url: '/auth/login',
       method: 'post',
       data
     })

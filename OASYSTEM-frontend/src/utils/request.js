@@ -29,7 +29,9 @@ service.interceptors.response.use(
   },
   error => {
     if (error.response) {
-      switch (error.response.status) {
+      const { status, data } = error.response
+      
+      switch (status) {
         case 401:
           ElMessage.error('請重新登錄')
           localStorage.removeItem('token')
@@ -42,11 +44,21 @@ service.interceptors.response.use(
           ElMessage.error('請求的資源不存在')
           break
         case 500:
-          ElMessage.error('服務器錯誤')
+          const errorMessage = data.message || data.error || '服務器內部錯誤'
+          ElMessage.error(errorMessage)
+          console.error('服務器錯誤詳情:', error.response)
           break
         default:
-          ElMessage.error(error.response.data.message || '未知錯誤')
+          const defaultError = data.message || data.error || error.message || '未知錯誤'
+          ElMessage.error(defaultError)
+          console.error('請求錯誤詳情:', error.response)
       }
+    } else if (error.request) {
+      ElMessage.error('無法連接到服務器，請檢查網絡連接')
+      console.error('網絡錯誤:', error.request)
+    } else {
+      ElMessage.error('請求配置錯誤')
+      console.error('請求錯誤:', error.message)
     }
     return Promise.reject(error)
   }

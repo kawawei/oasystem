@@ -88,12 +88,171 @@
         </div>
       </div>
     </div>
+
+    <el-dialog
+      v-model="dialogVisible"
+      :show-close="false"
+      width="600px"
+      class="task-dialog"
+      top="5vh"
+    >
+      <div class="dialog-content">
+        <el-button 
+          class="close-btn" 
+          circle 
+          @click="dialogVisible = false"
+        >
+          <el-icon><Close /></el-icon>
+        </el-button>
+
+        <!-- 漸變背景標題區 -->
+        <div class="dialog-header">
+          <div class="header-content">
+            <h2>{{ isEditing ? '編輯任務' : '新增任務' }}</h2>
+            <p>{{ isEditing ? '修改任務信息' : '創建一個新的任務並設置相關信息' }}</p>
+          </div>
+        </div>
+
+        <!-- 表單區域 -->
+        <el-form
+          ref="taskFormRef"
+          :model="taskForm"
+          :rules="rules"
+          label-position="top"
+          class="task-form"
+        >
+          <el-form-item 
+            label="任務標題" 
+            prop="title"
+            class="form-item"
+          >
+            <el-input 
+              v-model="taskForm.title"
+              placeholder="輸入任務標題"
+              class="custom-input"
+            >
+              <template #prefix>
+                <el-icon><Edit /></el-icon>
+              </template>
+            </el-input>
+          </el-form-item>
+
+          <el-form-item 
+            label="任務描述" 
+            prop="description"
+            class="form-item"
+          >
+            <el-input
+              v-model="taskForm.description"
+              type="textarea"
+              :rows="4"
+              placeholder="詳細描述任務內容..."
+              class="custom-textarea"
+            />
+          </el-form-item>
+
+          <div class="form-row">
+            <el-form-item 
+              label="優先級" 
+              prop="priority"
+              class="form-item-half"
+            >
+              <el-select 
+                v-model="taskForm.priority"
+                placeholder="選擇優先級"
+                class="custom-select"
+              >
+                <el-option
+                  v-for="item in priorityOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                >
+                  <div class="priority-option">
+                    <div :class="['priority-dot', item.value]"></div>
+                    {{ item.label }}
+                  </div>
+                </el-option>
+              </el-select>
+            </el-form-item>
+
+            <el-form-item 
+              label="負責人" 
+              prop="assignee"
+              class="form-item-half"
+            >
+              <el-select 
+                v-model="taskForm.assignee"
+                placeholder="選擇負責人"
+                class="custom-select"
+                filterable
+              >
+                <el-option
+                  v-for="user in userOptions"
+                  :key="user.id"
+                  :label="user.name"
+                  :value="user.id"
+                >
+                  <div class="user-option">
+                    <el-avatar 
+                      :size="24" 
+                      :src="user.avatar"
+                      class="user-avatar"
+                    >
+                      {{ user.name.charAt(0) }}
+                    </el-avatar>
+                    <span>{{ user.name }}</span>
+                  </div>
+                </el-option>
+              </el-select>
+            </el-form-item>
+          </div>
+
+          <div class="form-row">
+            <el-form-item 
+              label="截止日期" 
+              prop="dueDate"
+              class="form-item"
+            >
+              <el-date-picker
+                v-model="taskForm.dueDate"
+                type="datetime"
+                placeholder="選擇截止日期"
+                format="YYYY-MM-DD HH:mm"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                class="custom-date-picker"
+              />
+            </el-form-item>
+          </div>
+        </el-form>
+
+        <!-- 底部按鈕區 -->
+        <div class="dialog-footer">
+          <el-button 
+            class="cancel-btn" 
+            @click="dialogVisible = false"
+          >
+            取消
+          </el-button>
+          <el-button 
+            type="primary" 
+            class="submit-btn" 
+            @click="submitTask"
+          >
+            {{ isEditing ? '更新任務' : '創建任務' }}
+          </el-button>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import { Edit, Close } from '@element-plus/icons-vue'
 import { taskAPI } from '../api/tasks'
+import { userAPI } from '../api/user'
 
 // 狀態按鈕配置
 const statusButtons = [
@@ -119,9 +278,51 @@ const searchQuery = ref('')
 const statusFilter = ref('')
 const tasks = ref([])
 
+// 添加表單相關的響應式數據
+const dialogVisible = ref(false)
+const taskFormRef = ref(null)
+const taskForm = ref({
+  title: '',
+  description: '',
+  priority: 'medium',
+  dueDate: '',
+  assignee: ''
+})
+
+// 優先級選項
+const priorityOptions = [
+  { label: '高優先級', value: 'high' },
+  { label: '中等優先級', value: 'medium' },
+  { label: '低優先級', value: 'low' }
+]
+
+// 表單驗證規則
+const rules = {
+  title: [
+    { required: true, message: '請輸入任務標題', trigger: 'blur' },
+    { min: 2, max: 50, message: '長 2 到 50 個字符', trigger: 'blur' }
+  ],
+  description: [
+    { required: true, message: '請輸入任務描述', trigger: 'blur' }
+  ],
+  priority: [
+    { required: true, message: '請選擇優先級', trigger: 'change' }
+  ],
+  dueDate: [
+    { required: true, message: '請選擇截止日期', trigger: 'change' }
+  ],
+  assignee: [
+    { required: true, message: '請選擇負責人', trigger: 'change' }
+  ]
+}
+
+// 添加用戶選項的響應式數據
+const userOptions = ref([])
+
 // 在組件掛載時獲取任務數據
 onMounted(async () => {
   await loadTasks()
+  await loadUsers()
 })
 
 // 加載任務數據
@@ -132,6 +333,21 @@ const loadTasks = async () => {
   } catch (error) {
     console.error('獲取任務失敗:', error)
     // 這裡可以添加錯誤提示
+  }
+}
+
+// 加載用戶列表
+const loadUsers = async () => {
+  try {
+    const response = await userAPI.getAllUsers()
+    userOptions.value = response
+  } catch (error) {
+    console.error('獲取用戶列表失敗:', error)
+    ElMessage({
+      message: '獲取用戶列表失敗',
+      type: 'error',
+      customClass: 'custom-message'
+    })
   }
 }
 
@@ -153,31 +369,29 @@ const handleStatusChange = (status) => {
   statusFilter.value = statusFilter.value === status ? '' : status
 }
 
-const handleCreateTask = async () => {
-  try {
-    const newTask = {
-      title: '新任務',  // 這裡可以改為彈出對話框輸入
-      description: '新任務描述',
-      priority: 'medium',
-      dueDate: new Date().toISOString()
-    }
-    await taskAPI.createTask(newTask)
-    await loadTasks()  // 重新加載任務列表
-  } catch (error) {
-    console.error('創建任務失敗:', error)
+const handleCreateTask = () => {
+  isEditing.value = false
+  currentTaskId.value = null
+  dialogVisible.value = true
+  taskForm.value = {
+    title: '',
+    description: '',
+    priority: 'medium',
+    dueDate: '',
+    assignee: ''
   }
 }
 
 const handleEdit = async (task) => {
-  try {
-    const updatedTask = {
-      ...task,
-      // 這裡可以添加編輯邏輯
-    }
-    await taskAPI.updateTask(task.id, updatedTask)
-    await loadTasks()
-  } catch (error) {
-    console.error('更新任務失敗:', error)
+  isEditing.value = true
+  currentTaskId.value = task.id
+  dialogVisible.value = true
+  taskForm.value = {
+    title: task.title,
+    description: task.description,
+    priority: task.priority,
+    dueDate: task.dueDate,
+    assignee: task.assignee
   }
 }
 
@@ -211,6 +425,57 @@ const getPriorityType = (priority) => {
 
 const getTaskCount = (status) => {
   return tasks.value.filter(task => task.status === status).length
+}
+
+// 添加提交方法
+const isEditing = ref(false)
+const currentTaskId = ref(null)
+
+const submitTask = async () => {
+  if (!taskFormRef.value) return
+
+  await taskFormRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        if (isEditing.value) {
+          // 更新任務
+          await taskAPI.updateTask(currentTaskId.value, taskForm.value)
+          ElMessage({
+            message: '任務更新成功',
+            type: 'success',
+            customClass: 'custom-message',
+            duration: 3000,
+            offset: 60,
+            grouping: true,
+            showClose: true
+          })
+        } else {
+          // 創建新任務
+          await taskAPI.createTask(taskForm.value)
+          ElMessage({
+            message: '任務創建成功',
+            type: 'success',
+            customClass: 'custom-message',
+            duration: 3000,
+            offset: 60,
+            grouping: true,
+            showClose: true
+          })
+        }
+        dialogVisible.value = false
+        await loadTasks()
+      } catch (error) {
+        ElMessage({
+          message: isEditing.value ? '更新任務失敗' : '創建任務失敗',
+          type: 'error',
+          customClass: 'custom-message',
+          duration: 3000,
+          showClose: true
+        })
+        console.error(isEditing.value ? '更新任務失敗:' : '創建任務失敗:', error)
+      }
+    }
+  })
 }
 </script>
 
@@ -523,7 +788,7 @@ const getTaskCount = (status) => {
   color: #86868b;
 }
 
-/* 動畫效果 */
+/* 動效果 */
 @keyframes slideIn {
   from {
     opacity: 0;
@@ -537,5 +802,399 @@ const getTaskCount = (status) => {
 
 .task-card {
   animation: slideIn 0.5s ease-out;
+}
+
+/* 添加新的樣式 */
+.task-dialog :deep(.el-dialog) {
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(20px);
+}
+
+.dialog-content {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.dialog-content::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: 
+    radial-gradient(
+      circle at 0% 0%,
+      rgba(10, 132, 255, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 100% 100%,
+      rgba(99, 102, 241, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 50%
+    );
+  transform: rotate(-15deg);
+  z-index: 0;
+}
+
+.dialog-content::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    linear-gradient(
+      45deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.08) 50%,
+      transparent 100%
+    );
+  z-index: 0;
+}
+
+.dialog-header {
+  background: linear-gradient(135deg, #0A84FF, #6C47FF);
+  padding: 40px 48px 40px 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.header-content h2 {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+
+.header-content p {
+  font-size: 16px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.task-form {
+  padding: 40px;
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+:deep(.el-form-item__label) {
+  padding-bottom: 12px;
+  font-size: 16px;
+  color: rgba(0, 0, 0, 0.85);
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.1);
+}
+
+.custom-input :deep(.el-input__wrapper),
+.custom-select :deep(.el-input__wrapper),
+.custom-date-picker :deep(.el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 
+    0 2px 6px rgba(0, 0, 0, 0.03),
+    0 1px 2px rgba(0, 0, 0, 0.02),
+    0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+}
+
+.custom-input :deep(.el-input__inner),
+.custom-select :deep(.el-input__inner) {
+  font-size: 16px;
+  color: #1d1d1f;
+}
+
+.custom-textarea :deep(.el-textarea__inner) {
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 
+    0 2px 6px rgba(0, 0, 0, 0.03),
+    0 1px 2px rgba(0, 0, 0, 0.02),
+    0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+}
+
+.custom-input :deep(.el-input__wrapper):hover,
+.custom-textarea :deep(.el-textarea__inner):hover,
+.custom-select :deep(.el-input__wrapper):hover,
+.custom-date-picker :deep(.el-input__wrapper):hover {
+  background: rgba(255, 255, 255, 0.5);
+  border-color: rgba(10, 132, 255, 0.6);
+}
+
+.custom-input :deep(.el-input__wrapper).is-focus,
+.custom-textarea :deep(.el-textarea__inner):focus,
+.custom-select :deep(.el-input__wrapper).is-focus,
+.custom-date-picker :deep(.el-input__wrapper).is-focus {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: #0A84FF;
+  box-shadow: 
+    0 0 0 4px rgba(10, 132, 255, 0.15),
+    0 2px 8px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+}
+
+.dialog-footer {
+  padding: 32px 40px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.cancel-btn {
+  padding: 12px 28px;
+  font-size: 15px;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(4px);
+  color: #1d1d1f;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.submit-btn {
+  padding: 12px 32px;
+  font-size: 15px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, 
+    rgba(10, 132, 255, 0.9), 
+    rgba(0, 102, 204, 0.9)
+  );
+  backdrop-filter: blur(4px);
+  border: none;
+  color: white;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.submit-btn:hover {
+  background: linear-gradient(135deg, 
+    rgba(0, 145, 255, 0.95), 
+    rgba(0, 116, 229, 0.95)
+  );
+  transform: translateY(-1px);
+  box-shadow: 
+    0 4px 12px rgba(10, 132, 255, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+}
+
+.priority-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 8px;
+  font-size: 15px;
+}
+
+.priority-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.form-item {
+  margin-bottom: 28px;
+}
+
+.custom-input :deep(.el-input__prefix),
+.custom-select :deep(.el-input__prefix),
+.custom-date-picker :deep(.el-input__prefix) {
+  font-size: 18px;
+  margin-right: 8px;
+  color: #0A84FF;
+}
+
+/* 關閉按鈕樣式優化 */
+.close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(4px);
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+.close-btn :deep(.el-icon) {
+  font-size: 18px;
+  color: white;
+}
+
+/* 自定義消息樣式 - Apple 風格 */
+:deep(.custom-message) {
+  padding: 12px 20px;
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    0 0 1px rgba(0, 0, 0, 0.1);
+  font-size: 15px;
+  font-weight: 500;
+  min-width: 320px;
+  display: flex;
+  align-items: center;
+  border: 0.5px solid rgba(255, 255, 255, 0.3);
+}
+
+/* 成功消息樣式 */
+:deep(.custom-message.el-message--success) {
+  background: rgba(255, 255, 255, 0.95);
+  border: 0.5px solid rgba(52, 199, 89, 0.2);
+}
+
+/* 錯誤消息樣式 */
+:deep(.custom-message.el-message--error) {
+  background: rgba(255, 255, 255, 0.95);
+  border: 0.5px solid rgba(255, 59, 48, 0.2);
+}
+
+/* 消息內容文字 */
+:deep(.custom-message .el-message__content) {
+  color: #1d1d1f;
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+/* 關閉按鈕 */
+:deep(.custom-message .el-message__closeBtn) {
+  color: rgba(0, 0, 0, 0.4);
+  font-size: 18px;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+  transition: all 0.3s ease;
+}
+
+:deep(.custom-message .el-message__closeBtn:hover) {
+  color: rgba(0, 0, 0, 0.6);
+  transform: translateY(-50%) scale(1.1);
+}
+
+/* 圖標樣式 */
+:deep(.custom-message .el-message__icon) {
+  font-size: 20px;
+  margin-right: 12px;
+}
+
+/* 成功圖標顏色 */
+:deep(.custom-message.el-message--success .el-message__icon) {
+  color: #34C759;
+}
+
+/* 錯誤圖標顏色 */
+:deep(.custom-message.el-message--error .el-message__icon) {
+  color: #FF3B30;
+}
+
+/* 消息動畫 */
+:deep(.el-message) {
+  top: 24px !important;
+  animation: messageSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes messageSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 用戶選項樣��� */
+.user-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 4px;
+}
+
+.user-avatar {
+  background: linear-gradient(135deg, #0A84FF, #6C47FF);
+  color: white;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 選擇器下拉面板樣式 */
+:deep(.el-select-dropdown.el-popper) {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 12px 32px rgba(0, 0, 0, 0.1),
+    0 2px 6px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 8px;
+}
+
+:deep(.el-select-dropdown__item) {
+  border-radius: 8px;
+}
+
+:deep(.el-select-dropdown__item.hover),
+:deep(.el-select-dropdown__item:hover) {
+  background: rgba(0, 122, 255, 0.1);
+}
+
+:deep(.el-select-dropdown__item.selected) {
+  background: rgba(0, 122, 255, 0.15);
+  color: #0A84FF;
+  font-weight: 600;
 }
 </style>

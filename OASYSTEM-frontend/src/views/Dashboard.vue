@@ -26,6 +26,10 @@
           <i class="fas fa-cog"></i>
           <span>基礎設置</span>
         </router-link>
+        <router-link to="/notes" class="nav-item" :class="{ active: $route.path === '/notes' }">
+          <i class="fas fa-sticky-note"></i>
+          <span>筆記</span>
+        </router-link>
       </nav>
     </aside>
 

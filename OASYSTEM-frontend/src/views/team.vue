@@ -21,15 +21,19 @@
         <el-tab-pane 
           v-for="team in teams" 
           :key="team.id" 
-          :label="team.name"
-          :name="team.id.toString()">
+          :label="team.name.length > 4 ? team.name.slice(0, 4) + '...' : team.name"
+          :name="team.id.toString()"
+          :aria-label="team.name">
           <!-- 團隊信息卡片 -->
           <div class="team-info glass-light">
             <div class="team-header">
               <div class="team-title">
                 <i class="fas fa-users-cog"></i>
                 <h3>{{ team.name }}</h3>
-                <el-tag v-if="team.creator === currentUserId" size="small" type="success">創建者</el-tag>
+                <el-tag v-if="team.creator === currentUserId" size="small" type="success">
+                  <i class="fas fa-crown" style="color: #FFD700; margin-right: 4px; font-size: 12px;"></i>
+                  創建者
+                </el-tag>
               </div>
               <el-button type="success" size="small" @click="showAddMemberDialog(team.id)">
                 <i class="fas fa-user-plus"></i> 添加成員
@@ -55,7 +59,7 @@
 
           <!-- 團隊成員列表 -->
           <div class="team-members">
-            <h4><i class="fas fa-user-friends"></i> 團隊成員</h4>
+            <h4><i class="fas fa-user-friends"></i> 團隊</h4>
             <el-table 
               :data="team.members" 
               style="width: 100%"
@@ -133,27 +137,79 @@
 
     <!-- 添加成員對話框 -->
     <el-dialog 
-      title="添加團隊成員" 
       v-model="addMemberDialogVisible"
-      width="30%"
-      class="custom-dialog">
-      <el-form :model="newMember" :rules="memberRules" ref="memberForm">
-        <el-form-item label="成員郵箱" prop="email">
-          <el-input 
-            v-model="newMember.email" 
-            placeholder="請輸入成員郵箱"
-            prefix-icon="fas fa-envelope">
-          </el-input>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span>
-          <el-button @click="addMemberDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="addMember">
-            <i class="fas fa-user-plus"></i> 添加
-          </el-button>
-        </span>
-      </template>
+      width="460px"
+      class="add-member-dialog"
+      :append-to-body="true"
+      :destroy-on-close="true"
+      :close-on-click-modal="false">
+      <div class="dialog-content">
+        <div class="dialog-icon">
+          <div class="icon-bg">
+            <el-icon><UserFilled /></el-icon>
+          </div>
+        </div>
+        
+        <div class="dialog-body">
+          <h3>添加成員</h3>
+          <p class="subtitle">選擇添加成員的方式</p>
+          
+          <!-- 添加方式選擇 -->
+          <div class="add-method-tabs">
+            <div 
+              class="method-tab" 
+              :class="{ active: addMethod === 'email' }"
+              @click="addMethod = 'email'">
+              <el-icon><Message /></el-icon>
+              <span>郵箱邀請</span>
+            </div>
+            <div 
+              class="method-tab"
+              :class="{ active: addMethod === 'qr' }"
+              @click="addMethod = 'qr'">
+              <el-icon><Promotion /></el-icon>
+              <span>QR Code</span>
+            </div>
+          </div>
+          
+          <!-- 郵箱邀請表單 -->
+          <el-form 
+            v-if="addMethod === 'email'"
+            :model="newMember" 
+            :rules="memberRules" 
+            ref="memberForm"
+            class="email-form">
+            <el-form-item prop="email" class="member-input">
+              <el-input 
+                v-model="newMember.email" 
+                placeholder="請輸入成員郵箱"
+                :prefix-icon="Message">
+              </el-input>
+            </el-form-item>
+          </el-form>
+          
+          <!-- QR Code 顯示區域 -->
+          <div v-else class="qr-code-area">
+            <div class="qr-wrapper">
+              <img :src="teamInviteQRCode" alt="邀請二維碼" />
+            </div>
+            <p class="qr-tip">掃描二維碼加入團隊</p>
+          </div>
+          
+          <div class="dialog-footer">
+            <button class="cancel-btn" @click="addMemberDialogVisible = false">
+              取消
+            </button>
+            <button 
+              v-if="addMethod === 'email'"
+              class="confirm-btn" 
+              @click="addMember">
+              <el-icon><UserFilled /></el-icon>
+              發送邀請
+            </button>
+          </div>
+        </div>
+      </div>
     </el-dialog>
   </div>
 </template>
@@ -161,7 +217,9 @@
 <script>
 import axios from 'axios'
 import { useStore } from 'vuex'  // 導入 useStore
-import { ref, onMounted } from 'vue'  // 導入 ref 和 onMounted
+import { ref, onMounted, watch } from 'vue'  // 導入 ref 和 onMounted
+import { Plus, Message, UserFilled, Promotion } from '@element-plus/icons-vue'
+import QRCode from 'qrcode'
 
 // 創建一個 axios 實例
 const api = axios.create({
@@ -171,6 +229,12 @@ const api = axios.create({
 
 export default {
   name: 'TeamManagement',
+  components: {
+    Plus,
+    Message,
+    UserFilled,
+    Promotion
+  },
   setup() {  // 使用 setup 函數
     const store = useStore()  // 獲取 store 實例
     const activeTeam = ref('')
@@ -183,7 +247,11 @@ export default {
 
     return {
       activeTeam,
-      handleTeamChange
+      handleTeamChange,
+      Plus,
+      Message,
+      UserFilled,
+      Promotion
     }
   },
   data() {
@@ -208,10 +276,27 @@ export default {
       memberRules: {
         email: [
           { required: true, message: '請輸入郵箱地址', trigger: 'blur' },
-          { type: 'email', message: '請輸入正確的郵箱地址', trigger: 'blur' }
+          { type: 'email', message: '請輸入正確的郵箱地址', trigger: 'blur' },
+          { 
+            validator: async (rule, value, callback) => {
+              if (!value) {
+                callback();
+                return;
+              }
+              try {
+                // 可以在這裡添加額外的郵箱驗證邏輯
+                callback();
+              } catch (error) {
+                callback(new Error('郵箱驗證失敗'));
+              }
+            }, 
+            trigger: 'blur' 
+          }
         ]
       },
-      currentUserId: null
+      currentUserId: null,
+      addMethod: 'email',
+      teamInviteQRCode: ''
     }
   },
   methods: {
@@ -243,6 +328,8 @@ export default {
       this.addMemberDialogVisible = true;
       this.currentTeamId = teamId;
       this.newMember.email = '';
+      this.addMethod = 'email';
+      this.generateQRCode(teamId);
     },
     handleInputFocus() {
       if (this.isError) {
@@ -252,7 +339,7 @@ export default {
     },
     handleInputBlur() {
       if (!this.newTeam.name.trim() && !this.isError) {
-        this.inputPlaceholder = '輸入團隊名稱';
+        this.inputPlaceholder = '輸入團隊名';
       }
     },
     async createTeam() {
@@ -275,7 +362,7 @@ export default {
         this.activeTeam = String(newTeam.id);
         
         this.createTeamDialogVisible = false;
-        this.$message.success('創建團隊成功');
+        this.$message.success('創建團隊功');
       } catch (error) {
         console.error('Error creating team:', error);
         this.$message.error(error.response?.data?.message || '創建團隊失敗');
@@ -296,8 +383,13 @@ export default {
         this.$message.success('添加成員成功');
         this.fetchTeams();
       } catch (error) {
-        if (error.message) {
-          this.$message.error(error.message);
+        console.error('Add member error:', error);
+        if (error.response?.data?.errors?.email) {
+          this.$message.error(error.response.data.errors.email[0]);
+        } else if (error.response?.data?.message) {
+          this.$message.error(error.response.data.message);
+        } else {
+          this.$message.error('添加成員失敗，請稍後重試');
         }
       }
     },
@@ -305,6 +397,18 @@ export default {
       if (!date) return '';
       const d = new Date(date);
       return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+    },
+    async generateQRCode(teamId) {
+      try {
+        console.log('Generating QR code for team:', teamId);
+        const inviteUrl = `${window.location.origin}/join-team/${teamId}`;
+        console.log('Invite URL:', inviteUrl);
+        this.teamInviteQRCode = await QRCode.toDataURL(inviteUrl);
+        console.log('QR code generated successfully');
+      } catch (error) {
+        console.error('Error generating QR code:', error);
+        this.$message.error('生成邀請碼失敗');
+      }
     }
   },
   created() {
@@ -314,6 +418,11 @@ export default {
       this.currentUserId = user.id;
     }
     this.fetchTeams();
+  },
+  watch: {
+    addMemberDialogVisible(newVal) {
+      console.log('Dialog visibility changed:', newVal);
+    }
   }
 }
 </script>
@@ -425,7 +534,7 @@ export default {
   background-color: rgba(64, 158, 255, 0.1);
 }
 
-/* 毛玻璃效果 */
+/* 毛璃效果 */
 .glass {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(20px);
@@ -440,7 +549,7 @@ export default {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
 }
 
-/* 自定義對話框樣式 */
+/* 自定義話框樣式 */
 :deep(.custom-dialog .el-dialog) {
   border-radius: 16px;
   overflow: hidden;
@@ -647,7 +756,7 @@ export default {
   opacity: 1;
 }
 
-/* 除錯誤提示相關樣式 */
+/* 除錯���提示關樣式 */
 .team-name-input :deep(.el-form-item__error) {
   display: none;
 }
@@ -669,7 +778,7 @@ export default {
   backdrop-filter: blur(4px);
 }
 
-/* 自定義標籤樣式 */
+/* 自定義籤樣式 */
 .custom-tabs :deep(.el-tabs__nav-wrap) {
   padding: 0 8px;
   background: rgba(255, 255, 255, 0.6);
@@ -687,16 +796,17 @@ export default {
 .custom-tabs :deep(.el-tabs__item) {
   height: 32px;
   line-height: 32px;
-  padding: 0;
-  font-size: 15px;  /* 增加字體大小 */
-  font-weight: 500;  /* 加粗字體 */
+  padding: 0 16px;
+  font-size: 15px;
+  font-weight: 500;
   color: #606266;
   border: none;
   margin: 4px;
   border-radius: 6px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  width: 80px;
+  min-width: 80px;
+  max-width: 160px;
   text-align: center;
 }
 
@@ -739,10 +849,31 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   padding: 0 8px;
-  letter-spacing: 0.5px;  /* 增加字間距 */
+  letter-spacing: 0.5px;
 }
 
-/* 添加成員按鈕樣式 */
+/* 可選：添加懸停時顯示完整名稱提示 */
+.custom-tabs :deep(.el-tabs__item) {
+  position: relative;
+}
+
+.custom-tabs :deep(.el-tabs__item:hover)::after {
+  content: attr(aria-label);
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+/* 添加成員按鈕樣 */
 .team-header :deep(.el-button) {
   height: 40px;
   padding: 0 24px;
@@ -777,13 +908,13 @@ export default {
 .team-title :deep(.el-tag) {
   height: 32px;  /* 再增加一點高度 */
   line-height: 32px;
-  padding: 0 16px;  /* 增加內邊��� */
+  padding: 0 16px;  /* 增加內邊距 */
   font-size: 15px;  /* 增加字體大小 */
   font-weight: 500;
   border: none;
   background: linear-gradient(135deg, #34C759 0%, #30D158 100%);
   color: white;
-  border-radius: 10px;  /* 增加圓角 */
+  border-radius: 10px;  /* 增加圓 */
   box-shadow: 0 4px 12px rgba(52, 199, 89, 0.2);
   margin-left: 12px;
   display: flex;
@@ -791,17 +922,214 @@ export default {
   gap: 6px;  /* 增加間距 */
 }
 
-/* 皇冠圖標 */
-.team-title :deep(.el-tag)::before {
-  content: '';
-  font-size: 16px;  /* 增加圖標大小 */
-  margin-right: 4px;
-  transform: scale(1.2);  /* 使用 transform 讓圖標更大 */
-}
-
 /* 懸浮效果 */
 .team-title :deep(.el-tag:hover) {
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(52, 199, 89, 0.3);
+}
+
+/* 添加成員對話框樣式 */
+.add-member-dialog :deep(.el-dialog) {
+  background: transparent !important;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: none;
+  padding: 0;
+  margin: 0 !important;
+}
+
+.add-member-dialog :deep(.el-overlay) {
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.add-member-dialog :deep(.el-dialog__header) {
+  display: none;
+}
+
+.add-member-dialog :deep(.el-dialog__body) {
+  padding: 0;
+  margin: 0;
+}
+
+.add-member-dialog .dialog-content {
+  background: linear-gradient(135deg, #2B3A67, #5C258D);
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+}
+
+.add-member-dialog .dialog-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.add-member-dialog .icon-bg {
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(135deg, #409EFF, #36D1DC);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12px 24px rgba(64, 158, 255, 0.2);
+}
+
+.add-member-dialog .icon-bg i {
+  font-size: 32px;
+  color: white;
+}
+
+.add-member-dialog h3 {
+  font-size: 24px;
+  text-align: center;
+  margin: 0;
+  color: white;
+}
+
+.add-member-dialog .subtitle {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 8px 0 24px;
+}
+
+.add-member-dialog .member-input :deep(.el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: none !important;
+  border-radius: 12px;
+  height: 52px;
+}
+
+.add-member-dialog .member-input :deep(.el-input__inner) {
+  color: white;
+  height: 52px;
+  font-size: 16px;
+  padding: 0 20px;
+}
+
+.add-member-dialog .member-input :deep(.el-input__inner::placeholder) {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.add-member-dialog .member-input :deep(.el-input__prefix-inner i) {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+}
+
+.add-member-dialog .dialog-footer {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.add-member-dialog .cancel-btn, .add-member-dialog .confirm-btn {
+  font-size: 16px;
+  font-weight: 500;
+  padding: 12px 32px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.add-member-dialog .cancel-btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.add-member-dialog .cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.add-member-dialog .confirm-btn {
+  background: #4CAF50;
+  color: white;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.add-member-dialog .confirm-btn:hover {
+  background: #45B649;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* 更新動畫效果 */
+.add-member-dialog :deep(.el-dialog) {
+  transform: scale(0.95);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.add-member-dialog :deep(.el-dialog.dialog-fade-enter-active) {
+  transform: scale(1);
+  opacity: 1;
+}
+
+/* 除錯誤提示相關樣式 */
+.add-member-dialog .member-input :deep(.el-form-item__error) {
+  display: none;
+}
+
+/* 添加方式選擇樣式 */
+.add-method-tabs {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.method-tab {
+  flex: 1;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+}
+
+.method-tab:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.method-tab.active {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* QR Code 區域 */
+.qr-code-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 0;
+}
+
+.qr-wrapper {
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.qr-wrapper img {
+  width: 200px;
+  height: 200px;
+  display: block;
+}
+
+.qr-tip {
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 16px;
+  font-size: 14px;
 }
 </style>

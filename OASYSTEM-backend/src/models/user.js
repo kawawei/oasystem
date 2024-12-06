@@ -23,7 +23,10 @@ module.exports = (sequelize, DataTypes) => {
     email: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true
+      unique: true,
+      validate: {
+        isEmail: true
+      }
     },
     role: {
       type: DataTypes.ENUM('admin', 'user'),
@@ -31,24 +34,8 @@ module.exports = (sequelize, DataTypes) => {
     }
   }, {
     tableName: 'Users',
-    timestamps: true
+    timestamps: true  // 這會自動處理 createdAt 和 updatedAt
   });
-
-  User.associate = (models) => {
-    User.hasMany(models.Task, {
-      foreignKey: 'userId',
-      as: 'tasks'
-    });
-    User.belongsToMany(models.Team, {
-      through: {
-        model: models.TeamMember,
-        unique: false
-      },
-      foreignKey: 'userId',
-      otherKey: 'teamId',
-      as: 'teams'
-    });
-  };
 
   return User;
 }; 

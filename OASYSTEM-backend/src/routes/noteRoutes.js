@@ -269,4 +269,62 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
+// 獲取筆記內容
+router.get('/:id/content', auth, async (req, res) => {
+  try {
+    const { pageNumber = 1 } = req.query;
+    
+    const content = await NoteContent.findOne({
+      where: {
+        noteId: req.params.id,
+        pageNumber: pageNumber
+      }
+    });
+
+    if (!content) {
+      return res.json({
+        success: true,
+        data: { content: '', pageNumber }
+      });
+    }
+
+    res.json({
+      success: true,
+      data: content
+    });
+  } catch (error) {
+    console.error('Get note content error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// 獲取筆記總頁數
+router.get('/:id/pages/count', auth, async (req, res) => {
+  try {
+    const noteId = req.params.id;
+    
+    // 從數據庫中獲取該筆記的所有內容
+    const contents = await NoteContent.findAll({
+      where: {
+        noteId: noteId
+      }
+    });
+    
+    // 返回內容的數量作為頁數
+    res.json({
+      success: true,
+      data: contents.length || 1  // 如果沒有內容，返回1作為默認頁數
+    });
+  } catch (error) {
+    console.error('Error getting pages count:', error);
+    res.status(500).json({
+      success: false,
+      message: '獲取頁數失敗'
+    });
+  }
+});
+
 module.exports = router; 

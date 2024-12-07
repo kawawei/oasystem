@@ -9,6 +9,7 @@ const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
 const teamRoutes = require('./routes/teamRoutes');
 const settingRoutes = require('./routes/settingRoutes');
+const noteRoutes = require('./routes/noteRoutes');
 const { setupBackupSchedule } = require('./utils/scheduler');
 const path = require('path');
 
@@ -30,6 +31,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/settings', settingRoutes);
+app.use('/api/notes', noteRoutes);
 
 // 靜態文件服務
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

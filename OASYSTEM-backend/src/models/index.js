@@ -9,7 +9,24 @@ const sequelize = new Sequelize(config.database, config.username, config.passwor
 
 // 導入模型
 const User = require('./user')(sequelize);
-// ... 其他模型導入
+const Note = require('./note')(sequelize);
+const NoteContent = require('./noteContent')(sequelize);
+
+// 設置模型關聯
+Note.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user'
+});
+
+Note.hasMany(NoteContent, {
+  foreignKey: 'noteId',
+  as: 'content'
+});
+
+NoteContent.belongsTo(Note, {
+  foreignKey: 'noteId',
+  as: 'note'
+});
 
 // 初始化數據庫
 async function initDatabase() {
@@ -27,20 +44,11 @@ async function initDatabase() {
       alter: alterSync     // 是否允許修改表結構
     });
 
-    // 檢查是否需要創建默認用戶
-    const userCount = await User.count();
-    if (userCount === 0) {
-      // 創建默認管理員用戶
-      await User.create({
-        username: 'admin',
-        email: 'admin@example.com',
-        password: 'admin123',
-        role: 'admin'
-      });
-      console.log('Default admin user created.');
-    }
-
     console.log('Database synchronized successfully.');
+
+    // 檢查是否需要創建 notes 表
+    await Note.sync({ alter: true });
+
   } catch (error) {
     console.error('Unable to initialize database:', error);
     process.exit(1);
@@ -50,6 +58,7 @@ async function initDatabase() {
 module.exports = {
   sequelize,
   User,
-  // ... 其他模型導出
+  Note,
+  NoteContent,
   initDatabase
 }; 

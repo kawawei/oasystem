@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Dashboard from '../views/Dashboard.vue'
 import Task from '../views/task.vue'
 import Setting from '../views/setting.vue'
+import Notes from '../views/notes.vue'
+import NoteEdit from '../views/noteEdit.vue'
 
 const routes = [
   {
@@ -41,7 +43,13 @@ const routes = [
       {
         path: 'notes',
         name: 'Notes',
-        component: () => import('../views/notes.vue'),
+        component: Notes,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'notes/:id',
+        name: 'NoteEdit',
+        component: NoteEdit,
         meta: { requiresAuth: true }
       }
     ]

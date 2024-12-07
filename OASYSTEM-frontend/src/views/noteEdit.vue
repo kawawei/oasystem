@@ -1,7 +1,7 @@
 <template>
   <div class="note-editor">
-    <!-- 頂部工具欄 -->
-    <div class="editor-toolbar">
+    <!-- 頂部工具欄 - 第一行 -->
+    <div class="editor-toolbar primary-toolbar">
       <div class="left-tools">
         <el-button class="toolbar-btn" @click="goBack">
           <el-icon><ArrowLeft /></el-icon>
@@ -24,45 +24,8 @@
           ref="titleInputRef"
           placeholder="請輸入標題"
         />
-        <div class="text-color-tool">
-          <div class="color-picker-wrapper" ref="colorPickerRef">
-            <div 
-              class="text-color-btn"
-              @click="handleColorPickerShow"
-            >
-              <span class="text-color-preview" :style="{ color: textColor }">A</span>
-              <el-icon class="text-color-arrow"><ArrowDown /></el-icon>
-            </div>
-            
-            <!-- 使用自定義的顏色選擇面板，而不是 el-popover -->
-            <div 
-              v-show="showColorPicker" 
-              class="color-picker-panel"
-            >
-              <div class="preset-colors">
-                <div 
-                  v-for="color in presetColors" 
-                  :key="color"
-                  class="color-item"
-                  :style="{ backgroundColor: color }"
-                  @click="applyTextColor(color)"
-                />
-              </div>
-              
-              <div class="color-divider">
-                <span>自訂顏色</span>
-              </div>
-
-              <el-color-picker
-                v-model="textColor"
-                @change="applyTextColor"
-                show-alpha
-                class="custom-color-picker"
-              />
-            </div>
-          </div>
-        </div>
       </div>
+
       <div class="center-tools">
         <div class="page-navigation">
           <el-button 
@@ -85,6 +48,7 @@
           </el-button>
         </div>
       </div>
+
       <div class="right-tools">
         <el-button 
           class="toolbar-btn" 
@@ -101,6 +65,79 @@
           <el-icon><Check /></el-icon>
           保存
         </el-button>
+      </div>
+    </div>
+
+    <!-- 頂部工具欄 - 第二行 -->
+    <div class="editor-toolbar secondary-toolbar">
+      <div class="format-tools">
+        <!-- 文字顏色工具 -->
+        <div class="text-color-tool">
+          <div class="color-picker-wrapper" ref="colorPickerRef">
+            <div 
+              class="text-color-btn"
+              @mousedown.prevent="handleColorPickerShow"
+            >
+              <span class="text-color-preview" :style="{ color: textColor }">A</span>
+              <el-icon class="text-color-arrow"><ArrowDown /></el-icon>
+            </div>
+            
+            <div 
+              v-show="showColorPicker" 
+              class="color-picker-panel"
+            >
+              <div class="preset-colors">
+                <div 
+                  v-for="color in presetColors" 
+                  :key="color"
+                  class="color-item"
+                  :style="{ backgroundColor: color }"
+                  @mousedown.prevent="applyTextColor(color)"
+                />
+              </div>
+              
+              <div class="color-divider">
+                <span>自訂顏色</span>
+              </div>
+
+              <el-color-picker
+                v-model="textColor"
+                @change="applyTextColor"
+                show-alpha
+                class="custom-color-picker"
+                @mousedown.stop
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- 字體大小選擇器 -->
+        <div class="font-size-tool">
+          <div class="font-size-wrapper" ref="fontSizeRef">
+            <div 
+              class="font-size-btn"
+              @mousedown.prevent="handleFontSizeShow"
+            >
+              <span class="font-size-preview">{{ fontSize }}px</span>
+              <el-icon class="font-size-arrow"><ArrowDown /></el-icon>
+            </div>
+            
+            <div 
+              v-show="showFontSize" 
+              class="font-size-panel"
+            >
+              <div 
+                v-for="size in fontSizes" 
+                :key="size"
+                class="size-item"
+                :class="{ active: fontSize === size }"
+                @mousedown.prevent="applyFontSize(size)"
+              >
+                {{ size }}px
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -149,7 +186,9 @@ const isBold = ref(false);
 const isItalic = ref(false);
 const isUnderline = ref(false);
 
-const fontSizes = [12, 14, 16, 18, 20, 24, 28, 32];
+const fontSizes = [
+  8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 36, 40, 48, 56, 64, 72
+];
 const highlightColors = ['#FFD700', '#90EE90', '#87CEFA', '#FFA07A', '#DDA0DD'];
 const predefineColors = [
   '#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF',
@@ -158,7 +197,7 @@ const predefineColors = [
 
 const editorRef = ref(null);
 
-// 添加一個變量來保存取範圍
+// 添加一個變量來保存選中範圍
 const savedRange = ref(null);
 
 // 添加一個變量來追踪當前使用的顏色
@@ -192,7 +231,7 @@ const saveNote = async () => {
   try {
     // 檢查是否內容需要保存
     if (content.value === undefined) {
-      ElMessage.warning('沒有內容需保存');
+      ElMessage.warning('沒有容需保存');
       return;
     }
 
@@ -299,12 +338,12 @@ const addNewPage = async () => {
 
 // 監聽內容變化
 const handleContentChange = (event) => {
-  // 保存 HTML 內容而不是純文本
+  // 保存 HTML 內容而不是文本
   content.value = event.target.innerHTML;
   hasUnsavedChanges.value = content.value !== originalContent.value;
 };
 
-// 處理貼上事件,只保留純文本
+// 處理貼事件,只保留純文本
 const handlePaste = (e) => {
   e.preventDefault();
   const text = e.clipboardData.getData('text/plain');
@@ -417,7 +456,7 @@ const saveTitle = async () => {
   }
 };
 
-// 格式化方法
+// 式化��
 const toggleFormat = (type) => {
   switch (type) {
     case 'bold':
@@ -444,8 +483,89 @@ watch(fontFamily, (newValue) => {
   document.execCommand('fontName', false, newValue);
 });
 
+// 修改字體大小選擇器的點擊處理
+const handleFontSizeShow = (e) => {
+  e.preventDefault();
+  // 保存當前選取範圍
+  const selection = window.getSelection();
+  if (selection.rangeCount > 0) {
+    savedRange.value = selection.getRangeAt(0).cloneRange();
+  }
+  showFontSize.value = !showFontSize.value;
+};
+
+const applyFontSize = (size) => {
+  fontSize.value = size;
+  
+  if (savedRange.value) {
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(savedRange.value);
+    
+    try {
+      const range = selection.getRangeAt(0);
+      const selectedText = range.toString();
+      
+      if (selectedText) {
+        // 獲取選中的所有文本節點
+        const nodes = [];
+        const walker = document.createTreeWalker(
+          range.commonAncestorContainer,
+          NodeFilter.SHOW_TEXT,
+          {
+            acceptNode: (node) => {
+              return range.intersectsNode(node) ? 
+                NodeFilter.FILTER_ACCEPT : 
+                NodeFilter.FILTER_REJECT;
+            }
+          }
+        );
+        
+        let node;
+        while (node = walker.nextNode()) {
+          nodes.push(node);
+        }
+        
+        // 處理每個文本節點
+        nodes.forEach(textNode => {
+          const parent = textNode.parentElement;
+          if (parent.tagName === 'SPAN') {
+            // 如果已經在 span 中，直接修改大小
+            parent.style.fontSize = `${size}px`;
+          } else {
+            // 如果不在 span 中，創建新的 span
+            const span = document.createElement('span');
+            span.style.fontSize = `${size}px`;
+            textNode.parentNode.replaceChild(span, textNode);
+            span.appendChild(textNode);
+          }
+        });
+        
+        // 更新選區
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    } catch (error) {
+      console.error('Error applying font size:', error);
+      ElMessage.error('無法應用字體大小，請重新選擇文字');
+    }
+    
+    savedRange.value = null;
+  }
+  
+  showFontSize.value = false;
+};
+
+// 修改顏色選擇器的點擊處理
+const handleColorPickerShow = (e) => {
+  e.preventDefault();
+  showColorPicker.value = !showColorPicker.value;
+};
+
+// 修改 watch fontSize
 watch(fontSize, (newValue) => {
-  document.execCommand('fontSize', false, newValue);
+  // 不需要在這裡處理字體大小的改變
+  // 因為已經在 applyFontSize 中處理了
 });
 
 watch(textColor, (newValue) => {
@@ -456,6 +576,9 @@ watch(textColor, (newValue) => {
 const handleClickOutside = (e) => {
   if (colorPickerRef.value && !colorPickerRef.value.contains(e.target)) {
     showColorPicker.value = false;
+  }
+  if (fontSizeRef.value && !fontSizeRef.value.contains(e.target)) {
+    showFontSize.value = false;
   }
 };
 
@@ -498,7 +621,7 @@ onUnmounted(() => {
   }
 });
 
-// 修改 applyTextColor 方法
+// 修改應用顏色的方法
 const applyTextColor = (color) => {
   textColor.value = color;
   currentTextColor.value = color;
@@ -506,12 +629,7 @@ const applyTextColor = (color) => {
   if (!editorRef.value) return;
   
   const selection = window.getSelection();
-  if (!selection.rangeCount) return;
-  
-  const range = selection.getRangeAt(0);
-  
-  if (range.toString()) {
-    // 如果有選中文字，改變選中文字的顏色
+  if (selection.rangeCount > 0) {
     try {
       document.execCommand('foreColor', false, color);
     } catch (error) {
@@ -520,28 +638,73 @@ const applyTextColor = (color) => {
     }
   }
   
-  // 關閉顏色選擇器
   showColorPicker.value = false;
-  
-  // 保持焦點在編輯器
-  editorRef.value.focus();
 };
 
-// 添加輸入事件處理
+// 修改 handleContentInput 函數
 const handleContentInput = (event) => {
-  // 保存原始內容
-  const originalContent = editorRef.value.innerHTML;
-  
-  // 處理內容變化
   handleContentChange(event);
   
-  // 確保新輸入的文字使用當前選擇的顏色
-  document.execCommand('foreColor', false, currentTextColor.value);
+  const selection = window.getSelection();
+  if (selection.rangeCount > 0) {
+    const range = selection.getRangeAt(0);
+    const container = range.startContainer;
+    
+    // 只處理文本節點
+    if (container.nodeType === 3) {
+      try {
+        // 檢查是否是新輸入��文字
+        const offset = range.startOffset;
+        const newChar = container.textContent[offset - 1];
+        
+        if (newChar) {
+          // 將文本節點分割成三部分：之前的文本、新字符、之後的文本
+          const beforeText = container.textContent.slice(0, offset - 1);
+          const afterText = container.textContent.slice(offset);
+          
+          // 創建新的 span 元素，使用當前字體大小
+          const span = document.createElement('span');
+          span.style.fontSize = `${fontSize.value}px`;
+          span.textContent = newChar;
+          
+          // 保留原有的顏色
+          if (textColor.value) {
+            span.style.color = textColor.value;
+          }
+          
+          // 更新原始文本節點的內容
+          container.textContent = beforeText;
+          
+          // 創建後面的文本節點
+          const afterNode = document.createTextNode(afterText);
+          
+          // 插入新的 span 和後面的文本
+          const parent = container.parentNode;
+          if (container.nextSibling) {
+            parent.insertBefore(span, container.nextSibling);
+            parent.insertBefore(afterNode, span.nextSibling);
+          } else {
+            parent.appendChild(span);
+            parent.appendChild(afterNode);
+          }
+          
+          // 將光標移動到正確的位置
+          const newRange = document.createRange();
+          newRange.setStartAfter(span);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        }
+      } catch (error) {
+        console.error('Error applying styles to new content:', error);
+      }
+    }
+  }
 };
 
 // 添加編輯器的 focus 事件處理
 const handleEditorFocus = () => {
-  // 當編輯器獲得焦點時，��用當前選擇的顏色
+  // 只保留顏色相關的設置
   if (textColor.value) {
     document.execCommand('foreColor', false, textColor.value);
   }
@@ -577,9 +740,32 @@ const setEditorContent = (htmlContent) => {
   }
 };
 
-// 修改顏色選擇器的顯示控制
-const handleColorPickerShow = () => {
-  showColorPicker.value = !showColorPicker.value;
+// 添加一個輔助函數來轉換字體大小值
+const getSizeValue = (px) => {
+  // HTML 的 fontSize 命令使用 1-7 值
+  // 這裡將 px 值映射相應的範圍
+  const sizes = {
+    12: 1,
+    14: 2,
+    16: 3,
+    18: 4,
+    20: 5,
+    24: 6,
+    28: 7
+  };
+  return sizes[px] || 3; // 默認返回 3 (16px)
+};
+
+// 添加新的響應式量
+const showFontSize = ref(false);
+const fontSizeRef = ref(null);
+
+// 添加編輯器的 mouseup 事件處理
+const handleEditorMouseUp = () => {
+  const selection = window.getSelection();
+  if (selection.rangeCount > 0) {
+    savedRange.value = selection.getRangeAt(0).cloneRange();
+  }
 };
 </script>
 
@@ -592,10 +778,9 @@ const handleColorPickerShow = () => {
 }
 
 .editor-toolbar {
-  padding: 1rem 2rem;
+  padding: 0.5rem 2rem;
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -603,10 +788,35 @@ const handleColorPickerShow = () => {
   z-index: 1000;
 }
 
+.primary-toolbar {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  height: 56px;
+  padding: 0 2rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;  /* 修改為自動寬度 */
+  align-items: center;
+  gap: 1rem;
+}
+
+.secondary-toolbar {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  height: 48px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 2rem;  /* 將內邊距移到這裡 */
+}
+
+.format-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;  /* 調整間距 */
+}
+
 .left-tools {
   display: flex;
   align-items: center;
   gap: 1rem;
+  min-width: 0;  /* 允許內容收縮 */
 }
 
 .editor-content {
@@ -663,142 +873,21 @@ const handleColorPickerShow = () => {
 
 .center-tools {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 4px 12px;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  box-shadow: 
-    0 2px 8px rgba(0, 0, 0, 0.05),
-    0 0 0 1px rgba(0, 0, 0, 0.03);
-}
-
-.page-navigation {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.toolbar-divider {
-  width: 1px;
-  height: 24px;
-  background: rgba(0, 0, 0, 0.1);
-}
-
-.format-tools {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.format-select {
-  width: 100px;
-}
-
-.format-group {
-  display: flex;
-  gap: 2px;
-}
-
-.format-group .el-button {
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  display: flex;
-  align-items: center;
   justify-content: center;
-}
-
-.color-tools {
-  display: flex;
   align-items: center;
-  gap: 4px;
-}
-
-.page-navigation {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px;
-}
-
-.page-btn {
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: rgba(0, 0, 0, 0.03);
-  color: #1d1d1f;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.page-btn:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.06);
-  transform: translateY(-1px);
-  box-shadow: 
-    0 4px 12px rgba(0, 0, 0, 0.06),
-    0 0 0 1px rgba(0, 0, 0, 0.03);
-}
-
-.page-btn:active:not(:disabled) {
-  transform: scale(0.96);
-}
-
-.page-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.page-indicator {
-  min-width: 70px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.02);
-  border-radius: 10px;
-  padding: 0 12px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #1d1d1f;
-  letter-spacing: 0.3px;
-  border: 1px solid rgba(0, 0, 0, 0.03);
-}
-
-.page-separator {
-  margin: 0 4px;
-  color: #86868b;
-  font-weight: 400;
-}
-
-/* 添加圖標動畫效果 */
-.page-btn:hover:not(:disabled) .el-icon {
-  transform: scale(1.1);
-}
-
-.page-btn .el-icon {
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.right-tools {
-  display: flex;
-  gap: 1rem;
 }
 
 .note-title {
   margin: 0;
+  font-size: 1.25rem;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 4px 12px;
   border-radius: 6px;
   transition: background-color 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
 }
 
 .note-title:hover {
@@ -829,6 +918,53 @@ const handleColorPickerShow = () => {
   font-weight: 500;
 }
 
+.page-navigation {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.03);
+  padding: 2px;
+  border-radius: 8px;
+  margin: 0 auto;  /* 確保在中間 */
+}
+
+.page-indicator {
+  min-width: 70px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1d1d1f;
+  padding: 0 8px;
+}
+
+.page-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #1d1d1f;
+  transition: all 0.2s ease;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.page-separator {
+  margin: 0 4px;
+  color: #86868b;
+}
+
+.right-tools {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
 .color-tools {
   display: flex;
   align-items: center;
@@ -852,7 +988,7 @@ const handleColorPickerShow = () => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* 自定義顏色選擇器面板 */
+/* 自定義色選擇器面板 */
 :deep(.el-color-picker__panel) {
   border: none;
   border-radius: 16px;
@@ -865,7 +1001,7 @@ const handleColorPickerShow = () => {
   background: rgba(255, 255, 255, 0.95);
 }
 
-/* 修改顏色選擇器按鈕鈕大小 */
+/* 修改顏色選擇按鈕鈕大小 */
 :deep(.el-color-picker__trigger) {
   width: 40px;
   height: 40px;
@@ -1076,7 +1212,7 @@ const handleColorPickerShow = () => {
   caret-color: v-bind('textColor');
 }
 
-/* 移除之的選取框透明樣式 */
+/* 移除的選取框透明樣式 */
 .rich-editor::selection,
 .rich-editor::-moz-selection,
 .rich-editor span::selection,
@@ -1108,5 +1244,151 @@ const handleColorPickerShow = () => {
     0 2px 8px rgba(0, 0, 0, 0.08);
   z-index: 2000;
   min-width: 240px;
+  max-height: 300px;  /* 添加最大高度 */
+  overflow-y: auto;   /* 添加滾動條 */
+}
+
+/* 美化滾動條 */
+.color-picker-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.color-picker-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.color-picker-panel::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 3px;
+}
+
+.color-picker-panel::-webkit-scrollbar-thumb:hover {
+  background: #ccc;
+}
+
+/* 添加字體大小選擇器樣式 */
+.font-size-tool {
+  margin-left: 0;
+}
+
+.font-size-select {
+  width: 80px;
+}
+
+:deep(.font-size-select .el-input__wrapper) {
+  background: #f5f5f5;
+  border: none;
+  box-shadow: none !important;
+  border-radius: 6px;
+  padding: 0 4px;
+}
+
+:deep(.font-size-select .el-input__inner) {
+  height: 32px;
+  color: #1d1d1f;
+  font-size: 14px;
+  padding: 0 4px;
+}
+
+:deep(.font-size-select .el-select__caret) {
+  color: #666;
+  margin-left: 2px;
+}
+
+:deep(.font-size-select:hover .el-input__wrapper) {
+  background: #eaeaea;
+}
+
+.font-size-wrapper {
+  position: relative;
+  z-index: 1000;
+}
+
+.font-size-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 12px;  /* 修改內邊距 */
+  border-radius: 10px;  /* 修改圓角以匹配顏色選擇器 */
+  background: rgba(0, 0, 0, 0.03);  /* 修改背景色以匹配顏色選擇器 */
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 70px;
+  height: 40px;  /* 設置固定高度以配顏色選擇器 */
+}
+
+.font-size-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.02);
+}
+
+.font-size-preview {
+  font-size: 16px;  /* 增加字體大小 */
+  font-weight: 500;  /* 加粗 */
+  color: #1d1d1f;
+}
+
+.font-size-arrow {
+  font-size: 12px;
+  color: #666;
+  margin-left: 4px;  /* 增加箭頭的左邊距 */
+}
+
+.font-size-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background: white;
+  border-radius: 8px;
+  padding: 8px 0;
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08);
+  z-index: 2000;
+  min-width: 100px;
+  max-height: 300px;  /* 添加最大高度 */
+  overflow-y: auto;   /* 添加滾動條 */
+}
+
+/* 美化滾動條 */
+.font-size-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.font-size-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.font-size-panel::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 3px;
+}
+
+.font-size-panel::-webkit-scrollbar-thumb:hover {
+  background: #ccc;
+}
+
+.size-item {
+  padding: 6px 16px;  /* 稍微減小padding使選項更緊湊 */
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #1d1d1f;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.size-item:hover {
+  background: #f5f5f5;
+}
+
+.size-item.active {
+  color: #007AFF;
+  background: rgba(0, 122, 255, 0.1);
 }
 </style> 

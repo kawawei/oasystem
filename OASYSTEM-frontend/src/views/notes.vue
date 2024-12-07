@@ -245,12 +245,7 @@ import { Plus, Check, Edit, Brush, Delete } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
-
-// 創建 axios 實例
-const api = axios.create({
-  baseURL: 'http://localhost:3000',
-  timeout: 5000
-})
+import api from '@/utils/api'
 
 const router = useRouter()
 const notes = ref([])
@@ -330,7 +325,7 @@ const coverStyles = [
   },
   { 
     id: 2, 
-    name: '復古牛���',
+    name: '復古牛皮',
     image: 'data:image/svg+xml;base64,' + btoa(`
       <svg width="200" height="280" xmlns="http://www.w3.org/2000/svg">
         <defs>
@@ -369,15 +364,11 @@ const coverStyles = [
 // 獲取筆記本列表
 const fetchNotes = async () => {
   try {
-    const response = await api.get('/api/notes', {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      }
-    })
-    notes.value = response.data.data
+    const response = await api.get('/api/notes');
+    notes.value = response.data.data;
   } catch (error) {
-    console.error('Fetch notes error:', error)
-    ElMessage.error('獲取筆記本列表失敗')
+    console.error('Fetch notes error:', error);
+    ElMessage.error('獲取筆記本列表失敗');
   }
 }
 
@@ -404,11 +395,7 @@ const createNote = async () => {
 
     console.log('Creating note:', noteData);
 
-    const response = await axios.post('/api/notes', noteData, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      }
-    });
+    const response = await api.post('/api/notes', noteData);
 
     if (response.data.success) {
       createDialogVisible.value = false;
@@ -459,18 +446,13 @@ const saveNoteStyle = async () => {
         paperColor: selectedColor.value
       });
 
-      const response = await axios.put(
-        `http://localhost:3000/api/notes/${selectedNote.value.id}`,
+      const response = await api.put(
+        `/api/notes/${selectedNote.value.id}`,
         {
           title: newNoteTitle.value.trim(),
           coverStyle: selectedCoverStyle.value,
           template: selectedCover.value,
           paperColor: selectedColor.value
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
         }
       );
 
@@ -508,11 +490,7 @@ const confirmDelete = () => {
 // 刪除筆記本
 const deleteNote = async () => {
   try {
-    await api.delete(`/api/notes/${selectedNote.value.id}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      }
-    })
+    await api.delete(`/api/notes/${selectedNote.value.id}`);
     
     editStyleVisible.value = false
     await fetchNotes()  // 重新獲取列表

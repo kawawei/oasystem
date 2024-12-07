@@ -1,43 +1,47 @@
-import axios from 'axios';
-
-const API_URL = 'http://localhost:3000/api';
-
-// 請求攔截器：添加 token
-axios.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+import api from '@/utils/api';
 
 export const taskAPI = {
   // 獲取所有任務
   getAllTasks: async () => {
-    const response = await axios.get(`${API_URL}/tasks`);
-    return response.data;
+    try {
+      const response = await api.get('/api/tasks');
+      return response.data.data;
+    } catch (error) {
+      console.error('Get tasks error:', error);
+      throw error;
+    }
   },
 
   // 創建任務
   createTask: async (taskData) => {
-    const response = await axios.post(`${API_URL}/tasks`, taskData);
-    return response.data;
+    try {
+      const response = await api.post('/api/tasks', taskData);
+      return response.data;
+    } catch (error) {
+      console.error('Create task error:', error);
+      throw error;
+    }
   },
 
   // 更新任務
-  updateTask: async (id, taskData) => {
-    const response = await axios.put(`${API_URL}/tasks/${id}`, taskData);
-    return response.data;
+  updateTask: async (taskId, taskData) => {
+    try {
+      const response = await api.put(`/api/tasks/${taskId}`, taskData);
+      return response.data;
+    } catch (error) {
+      console.error('Update task error:', error);
+      throw error;
+    }
   },
 
   // 刪除任務
-  deleteTask: async (id) => {
-    const response = await axios.delete(`${API_URL}/tasks/${id}`);
-    return response.data;
+  deleteTask: async (taskId) => {
+    try {
+      const response = await api.delete(`/api/tasks/${taskId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Delete task error:', error);
+      throw error;
+    }
   }
 }; 

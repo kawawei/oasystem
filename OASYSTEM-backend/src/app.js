@@ -22,6 +22,10 @@ app.use(express.json());
 // 路由調試中間件
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path}`);
+  if (req.method === 'POST' || req.method === 'PUT') {
+    console.log('Request body:', req.body);
+  }
+  console.log('Headers:', req.headers);
   next();
 });
 
@@ -45,9 +49,14 @@ app.use('/uploads', (req, res, next) => {
 // 錯誤處理中間件
 app.use((err, req, res, next) => {
   console.error('Server Error:', err);
+  console.error('Error Stack:', err.stack);
   res.status(500).json({
+    success: false,
     message: '服務器錯誤',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    error: process.env.NODE_ENV === 'development' ? {
+      message: err.message,
+      stack: err.stack
+    } : undefined
   });
 });
 

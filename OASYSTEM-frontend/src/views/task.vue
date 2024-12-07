@@ -221,7 +221,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Edit, Close } from '@element-plus/icons-vue'
-import { taskAPI } from '../api/tasks'
+import { taskAPI } from '@/api/tasks'
 
 // 狀態按鈕配置
 const statusButtons = [
@@ -418,6 +418,7 @@ const submitTask = async () => {
         })
         console.error(isEditing.value ? '更新任務失敗:' : '創建任務失敗:', error)
       }
+
     }
   })
 }

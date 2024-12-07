@@ -11,6 +11,7 @@ const sequelize = new Sequelize(config.database, config.username, config.passwor
 const User = require('./user')(sequelize);
 const Note = require('./note')(sequelize);
 const NoteContent = require('./noteContent')(sequelize);
+const Task = require('./task')(sequelize);
 
 // 設置模型關聯
 User.hasMany(Note, {
@@ -32,6 +33,17 @@ Note.hasMany(NoteContent, {
 NoteContent.belongsTo(Note, {
   foreignKey: 'noteId',
   as: 'note'
+});
+
+// 添加 Task 模型的關聯
+User.hasMany(Task, {
+  foreignKey: 'userId',
+  as: 'tasks'
+});
+
+Task.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user'
 });
 
 // 初始化數據庫
@@ -66,5 +78,6 @@ module.exports = {
   User,
   Note,
   NoteContent,
+  Task,
   initDatabase
 }; 

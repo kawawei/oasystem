@@ -1,5 +1,12 @@
-module.exports = (sequelize, DataTypes) => {
+const { DataTypes } = require('sequelize');
+
+module.exports = (sequelize) => {
   const Task = sequelize.define('Task', {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
+    },
     title: {
       type: DataTypes.STRING,
       allowNull: false
@@ -10,15 +17,17 @@ module.exports = (sequelize, DataTypes) => {
     },
     status: {
       type: DataTypes.ENUM('pending', 'in_progress', 'completed'),
-      defaultValue: 'pending'
+      defaultValue: 'pending',
+      allowNull: false
     },
     priority: {
       type: DataTypes.ENUM('low', 'medium', 'high'),
-      defaultValue: 'medium'
+      defaultValue: 'medium',
+      allowNull: false
     },
     dueDate: {
       type: DataTypes.DATE,
-      allowNull: false
+      allowNull: true
     },
     userId: {
       type: DataTypes.INTEGER,
@@ -26,21 +35,12 @@ module.exports = (sequelize, DataTypes) => {
       references: {
         model: 'Users',
         key: 'id'
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'NO ACTION'
+      }
     }
   }, {
     tableName: 'Tasks',
     timestamps: true
   });
-
-  Task.associate = (models) => {
-    Task.belongsTo(models.User, {
-      foreignKey: 'userId',
-      as: 'user'
-    });
-  };
 
   return Task;
 }; 

@@ -20,11 +20,11 @@
             class="template-preview"
             :style="{ 
               backgroundColor: note.paperColor,
-              backgroundImage: `url(${coverStyles[note.coverStyle - 1]?.image})`
+              backgroundImage: note.coverStyle ? `url(${coverStyles[note.coverStyle - 1]?.image})` : null
             }"
           >
             <img 
-              v-if="coverTemplates[note.template - 1]?.pattern"
+              v-if="coverTemplates[note.template - 1]?.pattern && !note.coverStyle"
               :src="coverTemplates[note.template - 1].pattern" 
               class="pattern-overlay"
             >
@@ -54,7 +54,12 @@
             :class="['cover-option', { active: selectedCoverStyle === cover.id }]"
             @click="selectedCoverStyle = cover.id"
           >
-            <img :src="cover.image" :alt="cover.name">
+            <div 
+              class="template-preview"
+              :style="{ 
+                backgroundImage: `url(${cover.image})`
+              }"
+            ></div>
             <span class="cover-name">{{ cover.name }}</span>
           </div>
         </div>
@@ -143,7 +148,12 @@
             :class="['cover-option', { active: selectedCoverStyle === cover.id }]"
             @click="selectedCoverStyle = cover.id"
           >
-            <img :src="cover.image" :alt="cover.name">
+            <div 
+              class="template-preview"
+              :style="{ 
+                backgroundImage: `url(${cover.image})`
+              }"
+            ></div>
             <span class="cover-name">{{ cover.name }}</span>
           </div>
         </div>
@@ -262,12 +272,31 @@ const coverTemplates = [
   { 
     id: 2, 
     name: '方格', 
-    pattern: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0ibGluZXMiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAwIDIwIEwgMjAwIDIwIiBmaWxsPSJub25lIiBzdHJva2U9InJnYmEoMCwgMCwgMCwgMC4xKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI4MCIgZmlsbD0idXJsKCNsaW5lcykiLz48L3N2Zz4='
+    pattern: 'data:image/svg+xml;base64,' + btoa(`
+      <svg width="200" height="280" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(0, 0, 0, 0.1)" stroke-width="1"/>
+            <path d="M 0 20 L 20 20 20 0" fill="none" stroke="rgba(0, 0, 0, 0.1)" stroke-width="1"/>
+          </pattern>
+        </defs>
+        <rect width="200" height="280" fill="url(#grid)"/>
+      </svg>
+    `)
   },
   { 
     id: 3, 
     name: '橫線', 
-    pattern: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0ibGluZXMiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAwIDIwIEwgMjAwIDIwIiBmaWxsPSJub25lIiBzdHJva2U9InJnYmEoMCwgMCwgMCwgMC4xKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI4MCIgZmlsbD0idXJsKCNsaW5lcykiLz48L3N2Zz4='
+    pattern: 'data:image/svg+xml;base64,' + btoa(`
+      <svg width="200" height="280" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="lines" width="200" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 0 19 L 200 19" fill="none" stroke="rgba(0, 0, 0, 0.1)" stroke-width="1"/>
+          </pattern>
+        </defs>
+        <rect width="200" height="280" fill="url(#lines)"/>
+      </svg>
+    `)
   }
 ]
 
@@ -286,17 +315,54 @@ const coverStyles = [
   { 
     id: 1, 
     name: '經典牛皮',
-    image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI4MCIgZmlsbD0iI0Q0QzVBRiIvPjwvc3ZnPg=='
+    image: 'data:image/svg+xml;base64,' + btoa(`
+      <svg width="200" height="280" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="leather" width="4" height="4" patternUnits="userSpaceOnUse">
+            <path d="M1 1h1v1h-1z" fill="rgba(0,0,0,0.1)"/>
+          </pattern>
+        </defs>
+        <rect width="200" height="280" fill="#D4C5AF"/>
+        <rect width="200" height="280" fill="url(#leather)"/>
+        <rect x="15" y="15" width="170" height="250" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>
+      </svg>
+    `)
   },
   { 
     id: 2, 
-    name: '復牛皮',
-    image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0ic3VlZGUiIHdpZHRoPSI4IiBoZWlnaHQ9IjgiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxwYXRoIGQ9Ik0wIDBsOCA4TTggMEwwIDgiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjgwIiBmaWxsPSIjODA2MDQzIi8+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyODAiIGZpbGw9InVybCgjc3VlZGUpIi8+PHJlY3QgeD0iMjAiIHk9IjIwIiB3aWR0aD0iMTYwIiBoZWlnaHQ9IjI0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMykiIHN0cm9rZS13aWR0aD0iMiIvPjxwYXRoIGQ9Ik02MCAxNDBoODAiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjQpIiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSIxMDAiIHk9IjEzMCIgZm9udC1mYW1pbHk9InNlcmlmIiBmb250LXNpemU9IjE2IiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuNCkiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5PVEVCT09LPC90ZXh0Pjwvc3ZnPg=='
+    name: '復古牛���',
+    image: 'data:image/svg+xml;base64,' + btoa(`
+      <svg width="200" height="280" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="suede" width="8" height="8" patternUnits="userSpaceOnUse">
+            <path d="M0 0l8 8M8 0L0 8" stroke="rgba(255,255,255,0.1)" stroke-width="1" fill="none"/>
+          </pattern>
+        </defs>
+        <rect width="200" height="280" fill="#806043"/>
+        <rect width="200" height="280" fill="url(#suede)"/>
+        <rect x="20" y="20" width="160" height="240" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+        <path d="M60 140h80" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
+        <text x="100" y="130" font-family="serif" font-size="16" fill="rgba(255,255,255,0.4)" text-anchor="middle">NOTEBOOK</text>
+      </svg>
+    `)
   },
   { 
     id: 3, 
     name: '布面精裝',
-    image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZmFicmljIiB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNMCAwbDQgNE00IDBMMCA0IiBzdHJva2U9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIgc3Ryb2tlLXdpZHRoPSIwLjUiIGZpbGw9Im5vbmUiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjgwIiBmaWxsPSIjMkM0ODdBIi8+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyODAiIGZpbGw9InVybCgjZmFicmljKSIvPjxyZWN0IHg9IjEwIiB5PSIxMCIgd2lkdGg9IjE4MCIgaGVpZ2h0PSIyNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iZ29sZCIgc3Ryb2tlLXdpZHRoPSIxIi8+PHBhdGggZD0iTTIwIDIwaDQwdjQwaC00MHoiIGZpbGw9ImdvbGQiIG9wYWNpdHk9IjAuMyIvPjx0ZXh0IHg9IjEwMCIgeT0iMTQwIiBmb250LWZhbWlseT0ic2VyaWYiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9ImdvbGQiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5PVEVCT09LPC90ZXh0Pjwvc3ZnPg=='
+    image: 'data:image/svg+xml;base64,' + btoa(`
+      <svg width="200" height="280" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="fabric" width="4" height="4" patternUnits="userSpaceOnUse">
+            <path d="M0 0l4 4M4 0L0 4" stroke="rgba(255,255,255,0.1)" stroke-width="0.5" fill="none"/>
+          </pattern>
+        </defs>
+        <rect width="200" height="280" fill="#2C487A"/>
+        <rect width="200" height="280" fill="url(#fabric)"/>
+        <rect x="10" y="10" width="180" height="260" fill="none" stroke="gold" stroke-width="1"/>
+        <path d="M20 20h40v40h-40z" fill="gold" opacity="0.3"/>
+        <text x="100" y="140" font-family="serif" font-size="16" fill="gold" text-anchor="middle">NOTEBOOK</text>
+      </svg>
+    `)
   }
 ]
 
@@ -323,33 +389,39 @@ const showCreateNoteDialog = () => {
 }
 
 const createNote = async () => {
-  if (!newNoteTitle.value.trim()) {
-    ElMessage.warning('請輸入筆記本名稱')
-    return
-  }
-  
   try {
+    if (!newNoteTitle.value?.trim()) {
+      ElMessage.warning('請輸入筆記本名稱');
+      return;
+    }
+
     const noteData = {
-      title: newNoteTitle.value,
+      title: newNoteTitle.value.trim(),
       coverStyle: selectedCoverStyle.value,
       template: selectedCover.value,
       paperColor: selectedColor.value
-    }
-    
-    await api.post('/api/notes', noteData, {
+    };
+
+    console.log('Creating note:', noteData);
+
+    const response = await axios.post('/api/notes', noteData, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`
       }
-    })
-    
-    createDialogVisible.value = false
-    await fetchNotes()  // 重新獲取列表
-    ElMessage.success('筆記本創建成功')
+    });
+
+    if (response.data.success) {
+      createDialogVisible.value = false;
+      ElMessage.success('創建成功');
+      await fetchNotes(); // 重新獲取筆記列表
+    } else {
+      throw new Error(response.data.message || '創建失敗');
+    }
   } catch (error) {
-    console.error('Create note error:', error)
-    ElMessage.error('創建失敗')
+    console.error('Create note error:', error);
+    ElMessage.error(error.response?.data?.message || '創建失敗，請稍後重試');
   }
-}
+};
 
 const openNote = (note) => {
   router.push(`/notes/${note.id}`)
@@ -378,24 +450,45 @@ const showEditStyleDialog = () => {
 // 保存筆記樣式
 const saveNoteStyle = async () => {
   try {
-    await api.put(`/api/notes/${selectedNote.value.id}`, {
-      coverStyle: selectedCoverStyle.value,
-      template: selectedCover.value,
-      paperColor: selectedColor.value
-    }, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
+    // 檢查標題是否為空
+    if (newNoteTitle.value?.trim()) {
+      console.log('Saving note style and title:', {
+        title: newNoteTitle.value,
+        coverStyle: selectedCoverStyle.value,
+        template: selectedCover.value,
+        paperColor: selectedColor.value
+      });
+
+      const response = await axios.put(
+        `http://localhost:3000/api/notes/${selectedNote.value.id}`,
+        {
+          title: newNoteTitle.value.trim(),
+          coverStyle: selectedCoverStyle.value,
+          template: selectedCover.value,
+          paperColor: selectedColor.value
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
+
+      if (response.data.success) {
+        editStyleVisible.value = false;
+        await fetchNotes(); // 重新獲取列表
+        ElMessage.success('更新成功');
+      } else {
+        throw new Error(response.data.message || '更新失敗');
       }
-    })
-    
-    editStyleVisible.value = false
-    await fetchNotes()  // 重新獲取列表
-    ElMessage.success('樣式更新成功')
+    } else {
+      ElMessage.warning('筆記本名稱不能為空');
+    }
   } catch (error) {
-    console.error('Update style error:', error)
-    ElMessage.error('更新失敗')
+    console.error('Update style error:', error);
+    ElMessage.error(error.response?.data?.message || '更新失敗，請稍後重試');
   }
-}
+};
 
 // 確認刪除
 const confirmDelete = () => {
@@ -436,12 +529,21 @@ onMounted(() => {
 })
 
 const handleContextMenu = (note) => {
-  selectedNote.value = note
-  selectedCoverStyle.value = note.coverStyle
-  selectedCover.value = note.template
-  selectedColor.value = note.paperColor
-  newNoteTitle.value = note.title
-  editStyleVisible.value = true
+  selectedNote.value = note;
+  selectedCoverStyle.value = note.coverStyle;
+  selectedCover.value = note.template;
+  selectedColor.value = note.paperColor;
+  newNoteTitle.value = note.title;
+  editStyleVisible.value = true;
+
+  // 添加日誌
+  console.log('Opening edit dialog:', {
+    note,
+    selectedCoverStyle: selectedCoverStyle.value,
+    selectedCover: selectedCover.value,
+    selectedColor: selectedColor.value,
+    newNoteTitle: newNoteTitle.value
+  });
 }
 </script>
 
@@ -578,8 +680,14 @@ const handleContextMenu = (note) => {
   position: relative;
   background: #fff;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-  min-height: 280px;
+}
+
+.cover-option .template-preview {
   width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  transition: all 0.3s ease;
 }
 
 .cover-option:hover {
@@ -771,8 +879,10 @@ const handleContextMenu = (note) => {
   width: 100%;
   height: 100%;
   position: relative;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
   display: block;
+  background-size: cover;
+  background-position: center;
 }
 
 .pattern-overlay {
@@ -784,6 +894,7 @@ const handleContextMenu = (note) => {
   object-fit: cover;
   pointer-events: none;
   display: block;
+  transition: opacity 0.3s ease;
 }
 
 /* 添加棋盤格背景，讓淺色更容易辨識 */

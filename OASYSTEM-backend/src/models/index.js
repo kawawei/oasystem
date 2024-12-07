@@ -13,6 +13,11 @@ const Note = require('./note')(sequelize);
 const NoteContent = require('./noteContent')(sequelize);
 
 // 設置模型關聯
+User.hasMany(Note, {
+  foreignKey: 'userId',
+  as: 'notes'
+});
+
 Note.belongsTo(User, {
   foreignKey: 'userId',
   as: 'user'
@@ -20,7 +25,8 @@ Note.belongsTo(User, {
 
 Note.hasMany(NoteContent, {
   foreignKey: 'noteId',
-  as: 'content'
+  as: 'NoteContents',
+  onDelete: 'CASCADE'
 });
 
 NoteContent.belongsTo(Note, {

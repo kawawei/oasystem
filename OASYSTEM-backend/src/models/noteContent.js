@@ -7,10 +7,6 @@ module.exports = (sequelize) => {
       primaryKey: true,
       autoIncrement: true
     },
-    content: {
-      type: DataTypes.TEXT('long'),
-      allowNull: true
-    },
     noteId: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -19,8 +15,13 @@ module.exports = (sequelize) => {
         key: 'id'
       }
     },
+    content: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
     pageNumber: {
       type: DataTypes.INTEGER,
+      allowNull: false,
       defaultValue: 1
     }
   }, {

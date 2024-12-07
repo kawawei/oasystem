@@ -6,6 +6,7 @@ import axios from 'axios';
 import ElementPlus from 'element-plus';
 import 'element-plus/dist/index.css';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
+import './styles/dialog.css'
 
 // 創建 axios 實例
 const axiosInstance = axios.create({

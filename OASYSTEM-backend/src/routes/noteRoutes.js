@@ -51,31 +51,44 @@ router.get('/', auth, async (req, res) => {
 // 獲取單個筆記
 router.get('/:id', auth, async (req, res) => {
   try {
+    // 先獲取筆記本基本信息
     const note = await Note.findOne({
       where: { 
         id: req.params.id,
         userId: req.user.id
-      },
-      include: [{
-        model: NoteContent,
-        as: 'content',
-        where: { pageNumber: 1 },  // 默認獲取第一頁
-        required: false
-      }]
+      }
     });
     
     if (!note) {
       return res.status(404).json({
         success: false,
-        message: '筆記不存在'
+        message: '找不到筆記'
       });
     }
+
+    // 單獨獲取最新的內容
+    const noteContent = await NoteContent.findOne({
+      where: {
+        noteId: note.id,
+        pageNumber: 1
+      },
+      order: [['updatedAt', 'DESC']] // 確保獲取最新的內容
+    });
+
+    // 構建返回數據
+    const responseData = {
+      ...note.toJSON(),
+      content: noteContent || { content: '', pageNumber: 1 }
+    };
+    
+    console.log('Sending note data:', responseData);
     
     res.json({
       success: true,
-      data: note
+      data: responseData
     });
   } catch (error) {
+    console.error('Error fetching note:', error);
     res.status(500).json({
       success: false,
       message: error.message
@@ -87,12 +100,6 @@ router.get('/:id', auth, async (req, res) => {
 router.put('/:id/content', auth, async (req, res) => {
   try {
     const { content, pageNumber = 1 } = req.body;
-    console.log('保存筆記內容:', {
-      noteId: req.params.id,
-      userId: req.user.id,
-      pageNumber,
-      contentLength: content?.length
-    });
     
     // 檢查筆記是否存在且屬於當前用戶
     const note = await Note.findOne({
@@ -110,18 +117,42 @@ router.put('/:id/content', auth, async (req, res) => {
     }
 
     // 更新或創建內容
-    const [noteContent] = await NoteContent.upsert({
+    const [noteContent, created] = await NoteContent.upsert({
       noteId: note.id,
-      content,
-      pageNumber
+      content: content || '', // 確保 content 不為 undefined
+      pageNumber: pageNumber
+    }, {
+      returning: true // 返回更新後的數據
     });
+
+    // 更新筆記的更新時間
+    await note.update({ updatedAt: new Date() });
+
+    console.log('Content saved:', {
+      noteId: note.id,
+      content: content,
+      pageNumber: pageNumber,
+      created: created
+    });
+
+    // 保存後立即查詢最新內容進行驗證
+    const verifyContent = await NoteContent.findOne({
+      where: {
+        noteId: note.id,
+        pageNumber: pageNumber
+      },
+      order: [['updatedAt', 'DESC']]
+    });
+
+    console.log('Verified saved content:', verifyContent);
 
     res.json({
       success: true,
-      message: '更新成功',
-      data: noteContent
+      message: created ? '創建成功' : '更新成功',
+      data: verifyContent
     });
   } catch (error) {
+    console.error('Save content error:', error);
     res.status(500).json({
       success: false,
       message: error.message
@@ -159,10 +190,11 @@ router.get('/:id/content/:page', auth, async (req, res) => {
   }
 });
 
-// 更新筆記本樣式
+// 更新筆記本樣題
 router.put('/:id', auth, async (req, res) => {
   try {
-    const { coverStyle, template, paperColor } = req.body;
+    const { title, coverStyle, template, paperColor } = req.body;
+    console.log('Update note request:', { title, coverStyle, template, paperColor });
     
     const note = await Note.findOne({
       where: { 
@@ -178,18 +210,27 @@ router.put('/:id', auth, async (req, res) => {
       });
     }
 
-    await note.update({
-      coverStyle,
-      template,
-      paperColor
+    // 只更新提供的字段
+    const updateData = {};
+    if (title !== undefined) updateData.title = title;
+    if (coverStyle !== undefined) updateData.coverStyle = coverStyle;
+    if (template !== undefined) updateData.template = template;
+    if (paperColor !== undefined) updateData.paperColor = paperColor;
+
+    await note.update(updateData);
+
+    console.log('Note updated:', {
+      id: note.id,
+      ...updateData
     });
 
     res.json({
       success: true,
       message: '更新成功',
-      data: note
+      data: await note.reload() // 返回更新後的完整數據
     });
   } catch (error) {
+    console.error('Update note error:', error);
     res.status(500).json({
       success: false,
       message: error.message
